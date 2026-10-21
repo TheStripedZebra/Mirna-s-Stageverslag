@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blueprint Stageverslag - Compleet</title>
+    <title>Blueprint Stageverslag - Definitief</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -42,12 +42,12 @@
         }
 
         .export-btn {
-            background: #22c55e; color: #ffffff; border: none; padding: 8px 14px;
+            background: #2563eb; color: #ffffff; border: none; padding: 8px 14px;
             font-size: 11px; font-family: 'Istok Web', sans-serif; font-weight: 700;
             border-radius: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             transition: background 0.2s, transform 0.1s;
         }
-        .export-btn:hover { background: #16a34a; transform: translateY(-1px); }
+        .export-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
 
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -228,7 +228,7 @@
 <body>
 
     <div class="export-bar">
-        <button class="export-btn" onclick="generateStandaloneHTML()">💾 Download Definitieve index.html</button>
+        <button class="export-btn" onclick="generateStandaloneHTML()">💾 Download (of druk Ctrl+S)</button>
     </div>
 
     <div id="photo-zoom-preview">
@@ -304,12 +304,18 @@
             }
         });
 
-        // --- 2. OPSLAAN IN LOCALSTORAGE BIJ TYPEN ---
+        // --- 2. DIRECT OPSLAAN BIJ TYPEN ---
         document.addEventListener('input', (e) => {
             if (e.target.hasAttribute('data-field')) {
                 localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
             }
         });
+
+        document.addEventListener('blur', (e) => {
+            if (e.target.hasAttribute('data-field')) {
+                localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
+            }
+        }, true);
 
         function toggleDetailClick(trig) {
             const card = trig.closest('.modal-card').querySelector('.detail-card, .detail-card-right');
@@ -377,16 +383,15 @@
             }
         });
 
-        // --- 3. DE SLIMME EXPORT-KNOP (BAKT LOCALSTORAGE IN DE HTML) ---
+        // --- 3. DE DEFINITIEVE EXPORT FUNCTIE (GEKOPPELD AAN CTRL+S EN KNOP) ---
         function generateStandaloneHTML() {
-            // Zorg dat alle actuele tekstvelden uit de DOM direct worden gehaald
+            // Haal alles direct uit localStorage en zet het hard in de elementen voordat we downloaden
             document.querySelectorAll('[data-field]').forEach(el => {
                 const key = el.getAttribute('data-field');
                 const val = localStorage.getItem(key);
                 if (val !== null) el.innerHTML = val;
             });
 
-            // Zorg dat alle galerijen vanuit localStorage in de HTML worden gezet
             for (let i = 1; i <= 26; i++) {
                 const gal = localStorage.getItem('gallery-' + i);
                 const el = document.getElementById('gallery-' + i);
@@ -395,17 +400,13 @@
                 }
             }
 
-            // Verberg de knopbalk tijdelijk zodat deze niet op de geëxporteerde pagina verschijnt
             const exportBar = document.querySelector('.export-bar');
             if (exportBar) exportBar.style.display = 'none';
 
-            // Pak de volledige HTML van het huidige scherm
             let pageHTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
 
-            // Zet de knopbalk weer terug op het scherm
             if (exportBar) exportBar.style.display = 'flex';
 
-            // Download het bestand automatisch als 'index.html'
             const blob = new Blob([pageHTML], { type: 'text/html;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -413,9 +414,15 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-
-            alert("Je definitieve 'index.html'-bestand is gedownload en bevat al je teksten en foto's! Je kunt dit direct op GitHub zetten.");
         }
+
+        // --- 4. LUISTER NAAR CTRL + S ---
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault(); // Voorkom dat de browser de standaard "pagina opslaan als..." dialoog opent
+                generateStandaloneHTML(); // Activeer direct onze eigen complete export
+            }
+        });
 
         document.addEventListener('click', (e) => {
             const trig = e.target.closest('.hotspot, .legend-item');
@@ -429,6 +436,9 @@
             const closeBtn = modal.querySelector('.modal-close');
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
+                    modal.querySelectorAll('[data-field]').forEach(el => {
+                        localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
+                    });
                     modal.classList.remove('active');
                     modal.querySelectorAll('.detail-card, .detail-card-right').forEach(card => card.classList.remove('active'));
                     modal.querySelectorAll('.blueprint-hover-trigger').forEach(trig => trig.textContent = 'Lees meer...');
@@ -436,6 +446,9 @@
             }
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
+                    modal.querySelectorAll('[data-field]').forEach(el => {
+                        localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
+                    });
                     modal.classList.remove('active');
                     modal.querySelectorAll('.detail-card, .detail-card-right').forEach(card => card.classList.remove('active'));
                     modal.querySelectorAll('.blueprint-hover-trigger').forEach(trig => trig.textContent = 'Lees meer...');
