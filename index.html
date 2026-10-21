@@ -42,12 +42,12 @@
         }
 
         .export-btn {
-            background: #2563eb; color: #ffffff; border: none; padding: 8px 14px;
+            background: #22c55e; color: #ffffff; border: none; padding: 8px 14px;
             font-size: 11px; font-family: 'Istok Web', sans-serif; font-weight: 700;
             border-radius: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             transition: background 0.2s, transform 0.1s;
         }
-        .export-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+        .export-btn:hover { background: #16a34a; transform: translateY(-1px); }
 
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -145,7 +145,6 @@
             margin-top: 1px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
         }
 
-        /* Foto Zoom Hover Preview */
         #photo-zoom-preview {
             position: fixed; display: block; opacity: 0; visibility: hidden; background-color: #ffffff !important;
             padding: 3px; border-radius: 4px; box-shadow: 0 30px 70px rgba(0,0,0,0.95); z-index: 2147483647 !important;
@@ -168,7 +167,6 @@
         }
         .close-tr { top: -9px; right: -9px; } .close-tl { top: -9px; left: -9px; }
 
-        /* Modal posities */
         #modal-6 .modal-card, #modal-7 .modal-card, #modal-8 .modal-card, #modal-9 .modal-card, #modal-13 .modal-card, #modal-15 .modal-card, #modal-16 .modal-card, #modal-18 .modal-card, #modal-19 .modal-card, #modal-25 .modal-card { width: 210px; }
         #modal-1 .modal-card, #modal-2 .modal-card, #modal-3 .modal-card, #modal-4 .modal-card, #modal-5 .modal-card, #modal-10 .modal-card, #modal-11 .modal-card, #modal-12 .modal-card, #modal-14 .modal-card, #modal-17 .modal-card, #modal-20 .modal-card, #modal-21 .modal-card, #modal-22 .modal-card, #modal-23 .modal-card, #modal-24 .modal-card, #modal-26 .modal-card { width: 240px; }
         #modal-1 .modal-card  { top: 29.4%; right: 50.0%; border-radius: 16px 0px 16px 16px; }
@@ -230,10 +228,9 @@
 <body>
 
     <div class="export-bar">
-        <button class="export-btn" onclick="exportStorageData()">📋 Kopieer Locale Data voor AI</button>
+        <button class="export-btn" onclick="generateStandaloneHTML()">💾 Download Definitieve index.html</button>
     </div>
 
-    <!-- Foto Zoom Preview Element -->
     <div id="photo-zoom-preview">
         <img src="" alt="Zoom">
         <span></span>
@@ -291,7 +288,7 @@
     </div>
 
     <script>
-        // --- 1. LADEN UIT LOCALSTORAGE ---
+        // --- 1. LADEN UIT LOCALSTORAGE BIJ OPSTARTEN ---
         window.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('[data-field]').forEach(el => {
                 const key = el.getAttribute('data-field');
@@ -307,14 +304,13 @@
             }
         });
 
-        // --- 2. OPSLAAN BIJ TYPEN ---
+        // --- 2. OPSLAAN IN LOCALSTORAGE BIJ TYPEN ---
         document.addEventListener('input', (e) => {
             if (e.target.hasAttribute('data-field')) {
                 localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
             }
         });
 
-        // --- 3. LEES MEER / MINDER TOGGLE ---
         function toggleDetailClick(trig) {
             const card = trig.closest('.modal-card').querySelector('.detail-card, .detail-card-right');
             if (card) {
@@ -323,7 +319,6 @@
             }
         }
 
-        // --- 4. FOTO UPLOAD & OPSLAG ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
             const gallery = document.getElementById(`gallery-${modalId}`);
@@ -347,7 +342,6 @@
             event.target.value = '';
         }
 
-        // --- 5. HOVER / ZOOM PREVIEW VOOR FOTO'S (HERSTELD!) ---
         const zoomPreview = document.getElementById('photo-zoom-preview');
         const zoomImg = zoomPreview.querySelector('img');
         const zoomSpan = zoomPreview.querySelector('span');
@@ -383,23 +377,46 @@
             }
         });
 
-        // --- 6. EXPORT / KOPIEER KNOP VOOR AI ---
-        function exportStorageData() {
-            let backup = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                let key = localStorage.key(i);
-                backup[key] = localStorage.getItem(key);
-            }
-            let jsonString = JSON.stringify(backup, null, 2);
-            
-            navigator.clipboard.writeText(jsonString).then(() => {
-                alert("Gelukt! Alle data uit je lokale geheugen is gekopieerd naar je klembord. Plak dit in onze chat!");
-            }).catch(err => {
-                prompt("Kopieer deze tekst handmatig:", jsonString);
+        // --- 3. DE SLIMME EXPORT-KNOP (BAKT LOCALSTORAGE IN DE HTML) ---
+        function generateStandaloneHTML() {
+            // Zorg dat alle actuele tekstvelden uit de DOM direct worden gehaald
+            document.querySelectorAll('[data-field]').forEach(el => {
+                const key = el.getAttribute('data-field');
+                const val = localStorage.getItem(key);
+                if (val !== null) el.innerHTML = val;
             });
+
+            // Zorg dat alle galerijen vanuit localStorage in de HTML worden gezet
+            for (let i = 1; i <= 26; i++) {
+                const gal = localStorage.getItem('gallery-' + i);
+                const el = document.getElementById('gallery-' + i);
+                if (gal && el) {
+                    el.innerHTML = gal;
+                }
+            }
+
+            // Verberg de knopbalk tijdelijk zodat deze niet op de geëxporteerde pagina verschijnt
+            const exportBar = document.querySelector('.export-bar');
+            if (exportBar) exportBar.style.display = 'none';
+
+            // Pak de volledige HTML van het huidige scherm
+            let pageHTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+
+            // Zet de knopbalk weer terug op het scherm
+            if (exportBar) exportBar.style.display = 'flex';
+
+            // Download het bestand automatisch als 'index.html'
+            const blob = new Blob([pageHTML], { type: 'text/html;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            alert("Je definitieve 'index.html'-bestand is gedownload en bevat al je teksten en foto's! Je kunt dit direct op GitHub zetten.");
         }
 
-        // --- 7. NAVIGATIE & MODALS OPENEN/SLUITEN ---
         document.addEventListener('click', (e) => {
             const trig = e.target.closest('.hotspot, .legend-item');
             if (trig) {
