@@ -663,9 +663,9 @@
             event.target.value = '';
         }
 
-        // --- DIRECTE EXPORT ZONDER OPSLAG-LIMIET (GEBRUIKT GEEN LOCALSTORAGE) ---
+        // --- EXPORT FUNCTIE ZONDER GEHEUGENPROBLEMEN ---
         function exportHTML() {
-            // Sla alle huidige ingevoerde tekstinhoud direct vast in de HTML-elementen
+            // Borg dat alle getypte teksten direct vastgelegd worden in de HTML structuur
             document.querySelectorAll('.stage-text, .detail-text').forEach(el => {
                 el.innerHTML = el.innerHTML;
             });
