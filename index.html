@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blueprint Stageverslag - Definitief</title>
+    <title>Blueprint Stageverslag - Gedeeld</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -36,6 +36,18 @@
             background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.15) 50%, transparent 80%);
             box-shadow: 0 0 16px 4px rgba(255, 255, 255, 0.6);
         }
+
+        .export-bar {
+            position: fixed; top: 12px; right: 12px; z-index: 9999999; display: flex; gap: 8px;
+        }
+
+        .export-btn {
+            background: #2563eb; color: #ffffff; border: none; padding: 8px 14px;
+            font-size: 11px; font-family: 'Istok Web', sans-serif; font-weight: 700;
+            border-radius: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: background 0.2s, transform 0.1s;
+        }
+        .export-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
 
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -212,10 +224,14 @@
         .leg-23 { top: 70.8%; left: 2.4%; } .leg-24 { top: 73.1%; left: 2.4%; }
         .leg-25 { top: 75.4%; left: 2.4%; } .leg-26 { top: 77.8%; left: 2.4%; }
     </style>
-    <!-- Laadt automatisch het ingevulde data.js bestand in -->
-    <script src="data.js" onerror="console.log('Geen data.js gevonden.')"></script>
+    <!-- Dit script laadt automatisch de externe data in als het bestand bestaat op GitHub! -->
+    <script src="data.js" onerror="console.log('Geen extern data.js gevonden, gebruikt lokale browser-opslag.')"></script>
 </head>
 <body>
+
+    <div class="export-bar">
+        <button class="export-btn" onclick="generateDataFile()">💾 Download data.js (Ctrl+S)</button>
+    </div>
 
     <div id="photo-zoom-preview">
         <img src="" alt="Zoom">
@@ -251,17 +267,18 @@
                             <button class="modal-close ${closeClass}"><span>X</span></button>
                             <div class="modal-title">${id}. ${title}</div>
                             <div class="modal-body">
-                                <p class="stage-text" contenteditable="false" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
+                                <p class="stage-text" contenteditable="true" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
                                 <span class="blueprint-hover-trigger" onclick="toggleDetailClick(this)">Lees meer...</span>
                                 <div class="photo-gallery-header">
                                     <span class="photo-gallery-title">Foto's</span>
+                                    <label class="upload-btn-label">+ Foto <input type="file" multiple accept="image/*" style="display:none;" onchange="handlePhotoUpload(event, ${id})"></label>
                                 </div>
                                 <div class="photo-gallery" id="gallery-${id}"></div>
                             </div>
                             <div class="detail-card${isRight}">
                                 <div class="detail-header"><span class="detail-tag">Uitgebreid verslag</span></div>
                                 <div class="detail-body">
-                                    <p class="detail-text" contenteditable="false" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
+                                    <p class="detail-text" contenteditable="true" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
                                 </div>
                             </div>
                         </div>
@@ -273,14 +290,16 @@
     </div>
 
     <script>
-        // --- INLADEN VAN DE DATA UIT DATA.JS VOOR DE DOCENT ---
+        // --- 1. LADEN VAN DATA (EERST EXTERNE DATA.JS, DAN LOCALSTORAGE) ---
         window.addEventListener('DOMContentLoaded', () => {
+            // Als er externe data is geladen via data.js, stop dit in localStorage zodat alles werkt
             if (typeof externalProjectData !== 'undefined') {
                 for (let key in externalProjectData) {
                     localStorage.setItem(key, externalProjectData[key]);
                 }
             }
 
+            // Vul de velden op het scherm met wat er in localStorage staat
             document.querySelectorAll('[data-field]').forEach(el => {
                 const key = el.getAttribute('data-field');
                 const val = localStorage.getItem(key);
@@ -295,12 +314,48 @@
             }
         });
 
+        // --- 2. DIRECT OPSLAAN BIJ TYPEN ---
+        document.addEventListener('input', (e) => {
+            if (e.target.hasAttribute('data-field')) {
+                localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
+            }
+        });
+
+        document.addEventListener('blur', (e) => {
+            if (e.target.hasAttribute('data-field')) {
+                localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
+            }
+        }, true);
+
         function toggleDetailClick(trig) {
             const card = trig.closest('.modal-card').querySelector('.detail-card, .detail-card-right');
             if (card) {
                 card.classList.toggle('active');
                 trig.textContent = card.classList.contains('active') ? 'Lees minder...' : 'Lees meer...';
             }
+        }
+
+        function handlePhotoUpload(event, modalId) {
+            const files = event.target.files;
+            const gallery = document.getElementById(`gallery-${modalId}`);
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const caption = prompt("Bijschrift voor foto:", file.name.split('.')[0]);
+                    if (caption === null) return;
+                    
+                    const img = new Image();
+                    img.onload = function() {
+                        const cls = img.height > img.width ? 'portrait' : 'landscape';
+                        gallery.insertAdjacentHTML('beforeend', `<div class="polaroid ${cls}"><img src="${e.target.result}"><span>${caption}</span></div>`);
+                        localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            event.target.value = '';
         }
 
         const zoomPreview = document.getElementById('photo-zoom-preview');
@@ -338,6 +393,41 @@
             }
         });
 
+        // --- 3. MAAKT HET LOSSE 'data.js' BESTAND BIJ CTRL+S ---
+        function generateDataFile() {
+            // Zorg dat actuele tekstvelden in localStorage worden gezet
+            document.querySelectorAll('[data-field]').forEach(el => {
+                localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
+            });
+
+            // Verzamel alles uit localStorage in een object
+            let dataObj = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                dataObj[key] = localStorage.getItem(key);
+            }
+
+            // Maak de inhoud van het JavaScript-bestand
+            let fileContent = "const externalProjectData = " + JSON.stringify(dataObj, null, 2) + ";";
+
+            // Download als 'data.js'
+            const blob = new Blob([fileContent], { type: 'application/javascript;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'data.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // --- 4. KOPPELING AAN CTRL + S ---
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault(); 
+                generateDataFile(); 
+            }
+        });
+
         document.addEventListener('click', (e) => {
             const trig = e.target.closest('.hotspot, .legend-item');
             if (trig) {
@@ -350,6 +440,9 @@
             const closeBtn = modal.querySelector('.modal-close');
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
+                    modal.querySelectorAll('[data-field]').forEach(el => {
+                        localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
+                    });
                     modal.classList.remove('active');
                     modal.querySelectorAll('.detail-card, .detail-card-right').forEach(card => card.classList.remove('active'));
                     modal.querySelectorAll('.blueprint-hover-trigger').forEach(trig => trig.textContent = 'Lees meer...');
@@ -357,6 +450,9 @@
             }
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
+                    modal.querySelectorAll('[data-field]').forEach(el => {
+                        localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
+                    });
                     modal.classList.remove('active');
                     modal.querySelectorAll('.detail-card, .detail-card-right').forEach(card => card.classList.remove('active'));
                     modal.querySelectorAll('.blueprint-hover-trigger').forEach(trig => trig.textContent = 'Lees meer...');
