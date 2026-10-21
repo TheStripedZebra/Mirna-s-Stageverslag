@@ -341,7 +341,7 @@
                                 polaroid.prepend(delBtn);
                             }
                             const span = polaroid.querySelector('span');
-                            if (span && !span.hasAttribute('contenteditable')) {
+                            if (span) {
                                 span.setAttribute('contenteditable', 'true');
                                 span.setAttribute('spellcheck', 'false');
                             }
@@ -384,7 +384,7 @@
             }
         }
 
-        // --- 3. FOTO UPLOAD (BESTANDEN & DRAG AND DROP) ---
+        // --- 3. FOTO UPLOAD & DRAG AND DROP ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
             processFiles(files, modalId);
