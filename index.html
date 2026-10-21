@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stageverslag Mirna 2026</title>
+    <title>Blueprint Stageverslag - Editor</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
     <!-- HEIC naar JPG Converter bibliotheek -->
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
@@ -125,9 +125,15 @@
         }
         .upload-btn-label:hover { background: rgba(100, 181, 246, 0.15); color: #ffffff; }
 
+        /* Drag and Drop styling voor de fotogalerij container */
         .photo-gallery {
             display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden;
             padding-bottom: 6px; padding-top: 4px; align-items: flex-end; width: 100%; min-height: 48px;
+            border: 2px dashed rgba(100, 181, 246, 0.3); border-radius: 4px; transition: background 0.2s, border-color 0.2s;
+        }
+        .photo-gallery.dragover {
+            background: rgba(100, 181, 246, 0.15);
+            border-color: #64b5f6;
         }
         .photo-gallery::-webkit-scrollbar { height: 3px; }
         .photo-gallery::-webkit-scrollbar-track { background: rgba(1, 32, 65, 0.5); }
@@ -284,10 +290,13 @@
                                 <p class="stage-text" contenteditable="true" spellcheck="false" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
                                 <span class="blueprint-hover-trigger" onclick="toggleDetailClick(this)">Lees meer...</span>
                                 <div class="photo-gallery-header">
-                                    <span class="photo-gallery-title">Foto's</span>
+                                    <span class="photo-gallery-title">Foto's (Sleep ze hierheen)</span>
                                     <label class="upload-btn-label">+ Foto <input type="file" multiple accept="image/*,.heic,.HEIC" style="display:none;" onchange="handlePhotoUpload(event, ${id})"></label>
                                 </div>
-                                <div class="photo-gallery" id="gallery-${id}"></div>
+                                <div class="photo-gallery" id="gallery-${id}" 
+                                     ondragover="handleDragOver(event)" 
+                                     ondragleave="handleDragLeave(event)" 
+                                     ondrop="handleDrop(event, ${id})"></div>
                             </div>
                             <div class="detail-card${isRight}">
                                 <div class="detail-header"><span class="detail-tag">Uitgebreid verslag</span></div>
@@ -375,9 +384,37 @@
             }
         }
 
-        // --- 3. FOTO UPLOAD (MET HEIC AUTOMATISCHE CONVERSIE) ---
+        // --- 3. FOTO UPLOAD (BESTANDEN & DRAG AND DROP) ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
+            processFiles(files, modalId);
+            event.target.value = '';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e, modalId) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                processFiles(files, modalId);
+            }
+        }
+
+        function processFiles(files, modalId) {
             const gallery = document.getElementById(`gallery-${modalId}`);
 
             Array.from(files).forEach(file => {
@@ -420,7 +457,6 @@
                     processFile(file, file.name);
                 }
             });
-            event.target.value = '';
         }
 
         function deletePolaroid(btn) {
