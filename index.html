@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blueprint Stageverslag - Compleet & Deelbaar</title>
+    <!-- Google Fonts: Jura en Istok Web importeren -->
+    <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0d1b2a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Jura', sans-serif;
+        }
+
+        .blueprint-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vh;
+            max-height: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .blueprint-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1422px; 
+            max-height: 1000px;
+            aspect-ratio: 1.422 / 1;
+            overflow: hidden; 
+        }
+
+        .blueprint-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Hotspots en legenda onzichtbaar met hover glow */
+        .hotspot, .legend-item {
+            position: absolute;
+            width: 1.6%;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            border: none;
+            background-color: transparent;
+            box-shadow: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .hotspot:hover, .legend-item:hover {
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.15) 50%, transparent 80%);
+            box-shadow: 0 0 16px 4px rgba(255, 255, 255, 0.6);
+        }
+
+        /* --- EXPORT BAR BOVENIN HET SCHERM --- */
+        .export-bar {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 9999999;
+            display: flex;
+            gap: 8px;
+        }
+
+        .export-btn {
+            background: #22c55e;
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            font-size: 11px;
+            font-family: 'Istok Web', sans-serif;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: background 0.2s, transform 0.1s;
+        }
+        .export-btn:hover {
+            background: #16a34a;
+            transform: translateY(-1px);
+        }
+
+        /* --- UNIVERSELE POP-UP MODAL STYLING --- */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            display: none;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .modal-overlay.active {
+            display: block;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            position: absolute;
+            background: radial-gradient(circle at center, #022D53 0%, #012041 100%);
+            background-color: #012041;
+            border: 2px solid #CED0DB;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            height: auto;
+            min-height: 170px;
+            overflow: visible !important;
+        }
+
+        .modal-card::before, .detail-card::before, .detail-card-right::before {
+            content: "";
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border-radius: inherit;
+            background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 24 0 L 0 0 0 24' fill='none' stroke='%23ffffff' stroke-width='0.5' stroke-opacity='0.07'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .modal-title {
+            position: relative;
+            z-index: 3;
+            color: #ffffff;
+            font-family: 'Jura', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 0;
+            padding: 0 0 4px 0;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(206, 208, 219, 0.2);
+        }
+
+        .modal-body {
+            position: relative;
+            z-index: 3;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding-top: 4px;
+            overflow: visible !important;
+        }
+
+        .stage-text {
+            color: #e2e8f0;
+            font-size: 9.5px;
+            line-height: 1.3;
+            font-family: 'Jura', sans-serif;
+            margin: 0;
+            outline: none;
+            border: 1px dashed transparent;
+            padding: 2px;
+            transition: border 0.2s;
+            border-radius: 2px;
+        }
+        .stage-text:focus {
+            border-color: rgba(100, 181, 246, 0.5);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* --- KLIK TRIGGER VOOR HET VERSLAG --- */
+        .blueprint-hover-trigger {
+            display: inline-block;
+            margin-top: 2px;
+            margin-bottom: 2px;
+            font-size: 8px;
+            color: #64b5f6;
+            font-family: 'Istok Web', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border-bottom: 1px dashed #64b5f6;
+            width: fit-content;
+            transition: color 0.2s;
+            user-select: none;
+        }
+        .blueprint-hover-trigger:hover {
+            color: #ffffff;
+            border-bottom-style: solid;
+        }
+
+        /* Detail-cards (Uitgebreid Verslag) */
+        .detail-card, .detail-card-right {
+            position: absolute;
+            top: -40px;
+            width: 240px;
+            height: 280px;
+            background: radial-gradient(circle at center, #022D53 0%, #012041 100%);
+            background-color: #012041;
+            border: 2px dashed #CED0DB;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            border-radius: 12px;
+            z-index: 1005;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+        .detail-card { left: -260px; }
+        .detail-card-right { right: -260px; }
+        .detail-card.active, .detail-card-right.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .detail-header {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            border-bottom: 1px solid rgba(206, 208, 219, 0.3);
+            padding-bottom: 4px;
+        }
+
+        .detail-tag {
+            font-size: 9px;
+            color: #64b5f6;
+            font-family: 'Istok Web', sans-serif;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .detail-body { 
+            position: relative; 
+            z-index: 3; 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            margin-top: 8px; 
+            padding-right: 4px; 
+        }
+        
+        .detail-text {
+            color: #e2e8f0;
+            font-size: 10px;
+            line-height: 1.45;
+            font-family: 'Jura', sans-serif;
+            margin: 0 0 8px 0;
+            outline: none;
+            border: 1px dashed transparent;
+            padding: 2px;
+            transition: border 0.2s;
+        }
+        .detail-text:focus {
+            border-color: rgba(100, 181, 246, 0.5);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* --- FOTOGALERIJ KOP EN UPLOAD KNOP --- */
+        .photo-gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+            margin-bottom: 2px;
+        }
+
+        .photo-gallery-title {
+            font-size: 8.5px;
+            font-family: 'Istok Web', sans-serif;
+            color: #CED0DB;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .upload-btn-label {
+            font-size: 7.5px;
+            font-family: 'Istok Web', sans-serif;
+            color: #64b5f6;
+            cursor: pointer;
+            border: 1px dashed #64b5f6;
+            padding: 1px 4px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+        .upload-btn-label:hover {
+            background: rgba(100, 181, 246, 0.15);
+            color: #ffffff;
+        }
+
+        /* Speelse Foto Galerij */
+        .photo-gallery {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;   
+            overflow-y: hidden; 
+            padding-bottom: 6px;
+            padding-top: 4px;
+            align-items: flex-end;
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 48px;
+        }
+
+        .photo-gallery::-webkit-scrollbar { height: 3px; }
+        .photo-gallery::-webkit-scrollbar-track { background: rgba(1, 32, 65, 0.5); }
+        .photo-gallery::-webkit-scrollbar-thumb { background: #CED0DB; border-radius: 2px; }
+
+        /* --- FLEXIBELE POLAROID --- */
+        .polaroid {
+            background: #ffffff;
+            padding: 2px;
+            border-radius: 2px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            flex: 0 0 auto;
+            transform: rotate(-2deg);
+            cursor: pointer;
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .polaroid:nth-child(even) { transform: rotate(2deg); }
+
+        .polaroid img {
+            display: block;
+            border: none;
+            object-fit: cover;
+            position: relative;
+            z-index: 6;
+        }
+
+        .polaroid.landscape img { width: 48px; height: 34px; }
+        .polaroid.portrait img { width: 30px; height: 42px; }
+
+        .polaroid span {
+            display: block;
+            font-size: 5px;
+            color: #333;
+            text-align: center;
+            font-family: 'Istok Web', sans-serif;
+            margin-top: 1px;
+            margin-bottom: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            position: relative;
+            z-index: 6;
+        }
+
+        /* --- HARDWARE-AFGESCHERMDE 4x ZOOM PREVIEW --- */
+        #photo-zoom-preview {
+            position: fixed;
+            display: block;
+            opacity: 0;
+            visibility: hidden;
+            background-color: #ffffff !important;
+            padding: 3px;
+            border-radius: 4px;
+            box-shadow: 0 30px 70px rgba(0,0,0,0.95);
+            z-index: 2147483647 !important;
+            pointer-events: none;
+            transform: scale(1);
+            transform-origin: center center;
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease, visibility 0.2s ease;
+            contain: paint layout !important;
+            border: none !important;
+            outline: none !important;
+        }
+        
+        #photo-zoom-preview.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(4);
+        }
+
+        #photo-zoom-preview img {
+            display: block;
+            border: none !important;
+            outline: none !important;
+            object-fit: cover;
+            background-color: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        #photo-zoom-preview.landscape img { width: 48px; height: 34px; }
+        #photo-zoom-preview.portrait img { width: 30px; height: 42px; }
+
+        #photo-zoom-preview span {
+            display: block;
+            font-size: 5px;
+            color: #333;
+            text-align: center;
+            font-family: 'Istok Web', sans-serif;
+            margin-top: 1px;
+            margin-bottom: 1px;
+            background-color: #ffffff !important;
+            width: 100%;
+        }
+
+        /* Sluitknop basis styling */
+        .modal-close {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: radial-gradient(circle at center, #022D53 0%, #012041 100%);
+            background-color: #012041;
+            border: 2px solid #CED0DB;
+            color: #CED0DB;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-family: 'Istok Web', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
+            transition: background-color 0.2s;
+            padding: 0;
+        }
+
+        .modal-close::after {
+            content: "";
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border-radius: 50%;
+            background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 24 0 L 0 0 0 24' fill='none' stroke='%23ffffff' stroke-width='0.5' stroke-opacity='0.07'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .modal-close span {
+            position: relative;
+            z-index: 11;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            line-height: 1;
+            transform: translateY(0.5px);
+        }
+
+        .modal-close:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .close-tr { top: -9px; right: -9px; }
+        .close-tl { top: -9px; left: -9px; }
+
+        /* --- BREEDTES VAN DE MODALS --- */
+        #modal-6 .modal-card, #modal-7 .modal-card, #modal-8 .modal-card, 
+        #modal-9 .modal-card, #modal-13 .modal-card, #modal-15 .modal-card, 
+        #modal-16 .modal-card, #modal-18 .modal-card, #modal-19 .modal-card, 
+        #modal-25 .modal-card { width: 210px; }
+
+        #modal-1 .modal-card, #modal-2 .modal-card, #modal-3 .modal-card, 
+        #modal-4 .modal-card, #modal-5 .modal-card, #modal-10 .modal-card, 
+        #modal-11 .modal-card, #modal-12 .modal-card, #modal-14 .modal-card, 
+        #modal-17 .modal-card, #modal-20 .modal-card, #modal-21 .modal-card, 
+        #modal-22 .modal-card, #modal-23 .modal-card, #modal-24 .modal-card, 
+        #modal-26 .modal-card { width: 240px; }
+
+        /* --- NAUWKEURIGE BORDER-RADIUS PER KAART (90-GRADEN HOEK EXACT BIJ DE KNOP) --- */
+
+        /* 1. Knoppen rechtsboven (scherpe hoek rechtsboven: 16px 0px 16px 16px) */
+        #modal-1 .modal-card  { top: 29.4%; right: 50.0%; border-radius: 16px 0px 16px 16px; }
+        #modal-2 .modal-card  { top: 29.8%; right: 43.9%; border-radius: 16px 0px 16px 16px; }
+        #modal-3 .modal-card  { top: 25.9%; right: 33.2%; border-radius: 16px 0px 16px 16px; }
+        #modal-4 .modal-card  { top: 35.0%; right: 42.6%; border-radius: 16px 0px 16px 16px; }
+        #modal-5 .modal-card  { top: 33.8%; right: 38.2%; border-radius: 16px 0px 16px 16px; }
+        #modal-6 .modal-card  { top: 35.2%; right: 58.3%; border-radius: 16px 0px 16px 16px; }
+        #modal-7 .modal-card  { top: 34.9%; right: 54.0%; border-radius: 16px 0px 16px 16px; }
+        #modal-8 .modal-card  { top: 39.1%; right: 56.3%; border-radius: 16px 0px 16px 16px; }
+        #modal-9 .modal-card  { top: 43.7%; right: 48.0%; border-radius: 16px 0px 16px 16px; }
+        #modal-10 .modal-card { top: 40.5%; right: 43.4%; border-radius: 16px 0px 16px 16px; }
+        #modal-13 .modal-card { top: 48.3%; right: 52.3%; border-radius: 16px 0px 16px 16px; }
+        #modal-16 .modal-card { top: 42.0%; right: 37.2%; border-radius: 16px 0px 16px 16px; }
+        #modal-18 .modal-card { top: 47.7%; right: 23.7%; border-radius: 16px 0px 16px 16px; }
+        #modal-19 .modal-card { top: 46.2%; right: 15.1%; border-radius: 16px 0px 16px 16px; }
+        #modal-25 .modal-card { top: 26.1%; right: 12.6%; border-radius: 16px 0px 16px 16px; }
+
+        /* 2. Knoppen linksboven (scherpe hoek linksboven: 0px 16px 16px 16px) */
+        #modal-15 .modal-card { bottom: 45.1%; right: 44.6%; border-radius: 0px 16px 16px 16px; }
+
+        /* 3. Knoppen rechtsonder (scherpe hoek rechtsonder: 16px 16px 0px 16px) */
+        #modal-11 .modal-card { bottom: 53.9%; right: 62.1%; border-radius: 16px 16px 0px 16px; }
+        #modal-14 .modal-card { bottom: 52.5%; right: 55.7%; border-radius: 16px 16px 0px 16px; }
+        #modal-17 .modal-card { bottom: 50.9%; right: 32.8%; border-radius: 16px 16px 0px 16px; }
+        #modal-20 .modal-card { bottom: 43.8%; right: 29.1%; border-radius: 16px 16px 0px 16px; }
+        #modal-21 .modal-card { bottom: 37.9%; right: 21.2%; border-radius: 16px 16px 0px 16px; }
+        #modal-22 .modal-card { bottom: 36.3%; right: 29.4%; border-radius: 16px 16px 0px 16px; }
+        #modal-23 .modal-card { bottom: 36.8%; right: 37.1%; border-radius: 16px 16px 0px 16px; }
+        #modal-24 .modal-card { bottom: 31.8%; right: 37.7%; border-radius: 16px 16px 0px 16px; }
+        #modal-26 .modal-card { bottom: 39.4%; right: 48.8%; border-radius: 16px 16px 0px 16px; }
+
+        /* 4. Knoppen linksonder (scherpe hoek linksonder: 16px 16px 16px 0px) */
+        #modal-12 .modal-card { bottom: 55.1%; right: 42.3%; border-radius: 16px 16px 16px 0px; }
+
+        /* Hotspot posities */
+        .spot-1 { top: 29.4%; left: 50.0%; } .spot-2 { top: 29.8%; left: 56.1%; }
+        .spot-3 { top: 25.9%; left: 66.8%; } .spot-4 { top: 35.0%; left: 57.4%; }
+        .spot-5 { top: 33.8%; left: 61.8%; } .spot-6 { top: 35.2%; left: 41.7%; }
+        .spot-7 { top: 34.9%; left: 46.0%; } .spot-8 { top: 39.1%; left: 43.7%; }
+        .spot-9 { top: 43.7%; left: 52.0%; } .spot-10 { top: 40.5%; left: 56.6%; }
+        .spot-11 { top: 46.1%; left: 37.9%; } .spot-12 { top: 44.9%; left: 57.7%; }
+        .spot-13 { top: 48.3%; left: 47.7%; } .spot-14 { top: 47.5%; left: 44.3%; }
+        .spot-15 { top: 54.9%; left: 55.4%; } .spot-16 { top: 42.0%; left: 62.8%; }
+        .spot-17 { top: 49.1%; left: 67.2%; } .spot-18 { top: 47.7%; left: 76.3%; }
+        .spot-19 { top: 46.2%; left: 84.9%; } .spot-20 { top: 56.2%; left: 70.9%; }
+        .spot-21 { top: 62.1%; left: 78.8%; } .spot-22 { top: 63.7%; left: 70.6%; }
+        .spot-23 { top: 63.2%; left: 62.9%; } .spot-24 { top: 68.2%; left: 62.3%; }
+        .spot-25 { top: 26.1%; left: 87.4%; } .spot-26 { top: 60.6%; left: 51.2%; }
+
+        /* Legenda posities */
+        .leg-1 { top: 19.5%; left: 2.4%; } .leg-2 { top: 21.9%; left: 2.4%; }
+        .leg-3 { top: 24.3%; left: 2.4%; } .leg-4 { top: 26.8%; left: 2.4%; }
+        .leg-5 { top: 29.1%; left: 2.4%; } .leg-6 { top: 31.5%; left: 2.4%; }
+        .leg-7 { top: 33.7%; left: 2.4%; } .leg-8 { top: 36.0%; left: 2.4%; }
+        .leg-9 { top: 38.4%; left: 2.4%; } .leg-10 { top: 40.8%; left: 2.4%; }
+        .leg-11 { top: 43.0%; left: 2.4%; } .leg-12 { top: 45.3%; left: 2.4%; }
+        .leg-13 { top: 47.7%; left: 2.4%; } .leg-14 { top: 49.9%; left: 2.4%; }
+        .leg-15 { top: 52.4%; left: 2.4%; } .leg-16 { top: 54.6%; left: 2.4%; }
+        .leg-17 { top: 56.9%; left: 2.4%; } .leg-18 { top: 59.2%; left: 2.4%; }
+        .leg-19 { top: 61.5%; left: 2.4%; } .leg-20 { top: 63.9%; left: 2.4%; }
+        .leg-21 { top: 66.3%; left: 2.4%; } .leg-22 { top: 68.5%; left: 2.4%; }
+        .leg-23 { top: 70.8%; left: 2.4%; } .leg-24 { top: 73.1%; left: 2.4%; }
+        .leg-25 { top: 75.4%; left: 2.4%; } .leg-26 { top: 77.8%; left: 2.4%; }
+    </style>
+</head>
+<body>
+
+    <!-- EXPORT BAR -->
+    <div class="export-bar">
+        <button class="export-btn" onclick="exportHTML()">💾 Exporteer Volledige HTML</button>
+    </div>
+
+    <!-- GEÏSOLEERDE ZOOM PREVIEW ELEMENT -->
+    <div id="photo-zoom-preview">
+        <img src="" alt="Zoom">
+        <span></span>
+    </div>
+
+    <div class="blueprint-wrapper">
+        <div class="blueprint-container">
+            <!-- Achtergrondafbeelding (Zorg dat hier jouw Base64-code staat of BLUEPRINT BASE.png) -->
+            <img id="blueprint-base-img" src="BLUEPRINT BASE.png" alt="Blueprint Base">
+            
+            <!-- Kaart Hotspots -->
+            <div class="hotspot spot-1"></div><div class="hotspot spot-2"></div>
+            <div class="hotspot spot-3"></div><div class="hotspot spot-4"></div>
+            <div class="hotspot spot-5"></div><div class="hotspot spot-6"></div>
+            <div class="hotspot spot-7"></div><div class="hotspot spot-8"></div>
+            <div class="hotspot spot-9"></div><div class="hotspot spot-10"></div>
+            <div class="hotspot spot-11"></div><div class="hotspot spot-12"></div>
+            <div class="hotspot spot-13"></div><div class="hotspot spot-14"></div>
+            <div class="hotspot spot-15"></div><div class="hotspot spot-16"></div>
+            <div class="hotspot spot-17"></div><div class="hotspot spot-18"></div>
+            <div class="hotspot spot-19"></div><div class="hotspot spot-20"></div>
+            <div class="hotspot spot-21"></div><div class="hotspot spot-22"></div>
+            <div class="hotspot spot-23"></div><div class="hotspot spot-24"></div>
+            <div class="hotspot spot-25"></div><div class="hotspot spot-26"></div>
+
+            <!-- Legenda Hotspots -->
+            <div class="legend-item leg-1"></div><div class="legend-item leg-2"></div>
+            <div class="legend-item leg-3"></div><div class="legend-item leg-4"></div>
+            <div class="legend-item leg-5"></div><div class="legend-item leg-6"></div>
+            <div class="legend-item leg-7"></div><div class="legend-item leg-8"></div>
+            <div class="legend-item leg-9"></div><div class="legend-item leg-10"></div>
+            <div class="legend-item leg-11"></div><div class="legend-item leg-12"></div>
+            <div class="legend-item leg-13"></div><div class="legend-item leg-14"></div>
+            <div class="legend-item leg-15"></div><div class="legend-item leg-16"></div>
+            <div class="legend-item leg-17"></div><div class="legend-item leg-18"></div>
+            <div class="legend-item leg-19"></div><div class="legend-item leg-20"></div>
+            <div class="legend-item leg-21"></div><div class="legend-item leg-22"></div>
+            <div class="legend-item leg-23"></div><div class="legend-item leg-24"></div>
+            <div class="legend-item leg-25"></div><div class="legend-item leg-26"></div>
+
+            <!-- GENERATIE VAN ALLE 26 MODALS -->
+            <script>
+                const modalTitles = [
+                    "King Cobra", "Zendercontainer", "Kleedkamer", "House of Horror", "Cycloon",
+                    "Toren", "Reuzenrad", "Suikerspinkraam", "Carrousel", "Kassa",
+                    "Droomtunnel", "Schiettent", "Tribune", "Regie", "Boktor",
+                    "Dance Jumper", "Octopus", "'t Anker", "De Voortuin", "Binnentuin",
+                    "Kantoor", "De Rode Haring", "Het Zeepaard", "Stretchtent", "Parkeerplaats", "Kopstoot Bar"
+                ];
+
+                const container = document.currentScript.parentNode;
+
+                modalTitles.forEach((title, index) => {
+                    const id = index + 1;
+                    const isRight = [3, 17, 18, 19, 20, 21, 22, 25].includes(id) ? "" : "-right";
+                    const closeClass = [11, 12, 14, 15, 17, 20, 21, 22, 23, 24, 26].includes(id) ? "close-tr" : "close-tl";
+
+                    const html = `
+                    <div id="modal-${id}" class="modal-overlay">
+                        <div class="modal-card">
+                            <button class="modal-close ${closeClass}"><span>X</span></button>
+                            <div class="modal-title">${id}. ${title}</div>
+                            <div class="modal-body">
+                                <p class="stage-text" contenteditable="true">Korte samenvatting van onderdeel ${id}.</p>
+                                <span class="blueprint-hover-trigger" onclick="toggleDetailClick(this)">Lees meer...</span>
+                                
+                                <div class="photo-gallery-header">
+                                    <span class="photo-gallery-title">Foto's & Documentatie</span>
+                                    <label class="upload-btn-label">
+                                        + Foto's Toevoegen
+                                        <input type="file" multiple accept="image/*" style="display:none;" onchange="handlePhotoUpload(event, ${id})">
+                                    </label>
+                                </div>
+                                <div class="photo-gallery" id="gallery-${id}"></div>
+                            </div>
+                            <div class="detail-card${isRight}">
+                                <div class="detail-header">
+                                    <span class="detail-tag">...</span>
+                                </div>
+                                <div class="detail-body">
+                                    <p class="detail-text" contenteditable="true">Hier kun je direct het uitgebreide verslag typen en bewerken voor ${title}...</p>
+                                }</div>
+                            </div>
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+            </script>
+
+        </div>
+    </div>
+
+    <script>
+        // --- KLIK OM DETAIL CARD TE OPENEN/SLUITEN & TEKST AANPASSEN ---
+        function toggleDetailClick(triggerElement) {
+            const modalCard = triggerElement.closest('.modal-card');
+            const overlay = modalCard.closest('.modal-overlay');
+            const detailCard = overlay.querySelector('.detail-card, .detail-card-right');
+            
+            if (detailCard) {
+                detailCard.classList.toggle('active');
+                if (detailCard.classList.contains('active')) {
+                    triggerElement.textContent = 'Lees minder...';
+                } else {
+                    triggerElement.textContent = 'Lees meer...';
+                }
+            }
+        }
+
+        // --- FOTO UPLOAD MET AUTOMATISCHE BASE64 INBEDGING ---
+        function handlePhotoUpload(event, modalId) {
+            const files = event.target.files;
+            const gallery = document.getElementById(`gallery-${modalId}`);
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgSrc = e.target.result;
+                    
+                    const defaultName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                    const customCaption = prompt("Voer een bijschrift in voor deze foto:", defaultName);
+                    
+                    if (customCaption === null) return;
+
+                    const tempImg = new Image();
+                    tempImg.onload = function() {
+                        const isPortrait = tempImg.height > tempImg.width;
+                        const orientationClass = isPortrait ? 'portrait' : 'landscape';
+
+                        const polaroidHTML = `
+                        <div class="polaroid ${orientationClass}">
+                            <img src="${imgSrc}" alt="Foto">
+                            <span>${customCaption}</span>
+                        </div>`;
+                        
+                        gallery.insertAdjacentHTML('beforeend', polaroidHTML);
+                    };
+                    tempImg.src = imgSrc;
+                };
+                reader.readAsDataURL(file);
+            });
+            event.target.value = '';
+        }
+
+        // --- DE BETROUWBARE EXPORT-FUNCTIE ---
+        function exportHTML() {
+            // Sla de actieve inhoud van alle bewerkbare velden hard op in de HTML-structuur
+            document.querySelectorAll('.stage-text, .detail-text').forEach(el => {
+                el.setAttribute('contenteditable', 'true');
+                el.innerHTML = el.innerHTML;
+            });
+
+            let docHTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+
+            const blob = new Blob([docHTML], { type: 'text/html;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Blueprint_Stageverslag_Compleet.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // --- ZWEVENDE FOTO HOVER PREVIEW LOGICA ---
+        const zoomPreview = document.getElementById('photo-zoom-preview');
+        const zoomImg = zoomPreview.querySelector('img');
+        const zoomSpan = zoomPreview.querySelector('span');
+
+        document.addEventListener('mouseover', (e) => {
+            const polaroid = e.target.closest('.polaroid');
+            if (polaroid) {
+                const img = polaroid.querySelector('img');
+                const span = polaroid.querySelector('span');
+                if (img) {
+                    zoomImg.src = img.src;
+                    zoomSpan.textContent = span ? span.textContent : '';
+                    
+                    if (polaroid.classList.contains('portrait')) {
+                        zoomPreview.classList.remove('landscape');
+                        zoomPreview.classList.add('portrait');
+                    } else {
+                        zoomPreview.classList.remove('portrait');
+                        zoomPreview.classList.add('landscape');
+                    }
+
+                    const rect = polaroid.getBoundingClientRect();
+                    const posX = Math.round(rect.left + rect.width / 2);
+                    const posY = Math.round(rect.top + rect.height / 2);
+
+                    zoomPreview.style.left = `${posX}px`;
+                    zoomPreview.style.top = `${posY}px`;
+                    zoomPreview.classList.add('active');
+                }
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            const polaroid = e.target.closest('.polaroid');
+            if (polaroid) {
+                zoomPreview.classList.remove('active');
+            }
+        });
+
+        // --- RESET TEKST BIJ SLUITEN ---
+        function resetTriggerTexts(container) {
+            const triggers = container.querySelectorAll('.blueprint-hover-trigger');
+            triggers.forEach(trig => {
+                trig.textContent = 'Lees meer...';
+            });
+        }
+
+        // --- HOTSPOT KLIK LOGICA ---
+        document.addEventListener('click', (e) => {
+            const trigger = e.target.closest('.hotspot, .legend-item');
+            if (trigger) {
+                const classList = Array.from(trigger.classList);
+                const spotClass = classList.find(c => c.startsWith('spot-') || c.startsWith('leg-'));
+                if (spotClass) {
+                    const idNum = spotClass.split('-')[1];
+                    const targetModal = document.getElementById(`modal-${idNum}`);
+                    if (targetModal) {
+                        targetModal.classList.add('active');
+                    }
+                }
+            }
+        });
+
+        // --- SLUITEN VAN POP-UPS ---
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            const closeBtn = modal.querySelector('.modal-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                    const detailCards = modal.querySelectorAll('.detail-card, .detail-card-right');
+                    detailCards.forEach(card => card.classList.remove('active'));
+                    resetTriggerTexts(modal);
+                });
+            }
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                    const detailCards = modal.querySelectorAll('.detail-card, .detail-card-right');
+                    detailCards.forEach(card => card.classList.remove('active'));
+                    resetTriggerTexts(modal);
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
