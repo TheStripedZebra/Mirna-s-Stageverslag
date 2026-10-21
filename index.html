@@ -141,7 +141,6 @@
         .polaroid.landscape img { width: 48px; height: 34px; }
         .polaroid.portrait img { width: 30px; height: 42px; }
         
-        /* Bewerkbaar onderschrift onder polaroid */
         .polaroid span {
             display: block; font-size: 5px; color: #333; text-align: center; font-family: 'Istok Web', sans-serif;
             margin-top: 1px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
@@ -151,7 +150,6 @@
             border-color: #2563eb; background: rgba(0,0,0,0.05); overflow: visible;
         }
 
-        /* Verwijder-knop voor foto's */
         .delete-photo-btn {
             position: absolute; top: -4px; right: -4px; width: 12px; height: 12px;
             background: #ef4444; color: #ffffff; border-radius: 50%; font-size: 8px;
@@ -281,18 +279,18 @@
                             <button class="modal-close ${closeClass}"><span>X</span></button>
                             <div class="modal-title">${id}. ${title}</div>
                             <div class="modal-body">
-                                <p class="stage-text" contenteditable="true" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
+                                <p class="stage-text" contenteditable="true" spellcheck="false" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
                                 <span class="blueprint-hover-trigger" onclick="toggleDetailClick(this)">Lees meer...</span>
                                 <div class="photo-gallery-header">
                                     <span class="photo-gallery-title">Foto's</span>
-                                    <label class="upload-btn-label">+ Foto <input type="file" multiple accept="image/*" style="display:none;" onchange="handlePhotoUpload(event, ${id})"></label>
+                                    <label class="upload-btn-label">+ Foto <input type="file" multiple accept="image/*,.heic,.HEIC" style="display:none;" onchange="handlePhotoUpload(event, ${id})"></label>
                                 </div>
                                 <div class="photo-gallery" id="gallery-${id}"></div>
                             </div>
                             <div class="detail-card${isRight}">
                                 <div class="detail-header"><span class="detail-tag">Uitgebreid verslag</span></div>
                                 <div class="detail-body">
-                                    <p class="detail-text" contenteditable="true" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
+                                    <p class="detail-text" contenteditable="true" spellcheck="false" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
                                 </div>
                             </div>
                         </div>
@@ -321,7 +319,24 @@
                 const gal = localStorage.getItem('gallery-' + i);
                 if (gal && gal.trim() !== '') {
                     const el = document.getElementById('gallery-' + i);
-                    if (el) el.innerHTML = gal;
+                    if (el) {
+                        el.innerHTML = gal;
+                        // Zorg dat oudere geladen foto's ook direct een delete-knop krijgen als die er nog niet zat
+                        el.querySelectorAll('.polaroid').forEach(polaroid => {
+                            if (!polaroid.querySelector('.delete-photo-btn')) {
+                                const delBtn = document.createElement('button');
+                                delBtn.className = 'delete-photo-btn';
+                                delBtn.innerHTML = '×';
+                                delBtn.onclick = function() { deletePolaroid(this); };
+                                polaroid.prepend(delBtn);
+                            }
+                            const span = polaroid.querySelector('span');
+                            if (span && !span.hasAttribute('contenteditable')) {
+                                span.setAttribute('contenteditable', 'true');
+                                span.setAttribute('spellcheck', 'false');
+                            }
+                        });
+                    }
                 }
             }
         });
@@ -331,7 +346,6 @@
             if (e.target.hasAttribute('data-field')) {
                 localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
             }
-            // Als er in een fotobijschrift getypt wordt: sla de hele galerij direct op
             if (e.target.tagName === 'SPAN' && e.target.closest('.polaroid')) {
                 const gallery = e.target.closest('.photo-gallery');
                 if (gallery) {
@@ -360,7 +374,7 @@
             }
         }
 
-        // --- 3. FOTO UPLOAD (MET EDITABLE CAPTION EN VERWIJDERKNOP) ---
+        // --- 3. FOTO UPLOAD (INCL. HEIC ONDERSTEUNING EN DELETE-KNOP) ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
             const gallery = document.getElementById(`gallery-${modalId}`);
@@ -368,7 +382,7 @@
             Array.from(files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const caption = prompt("Bijschrift voor foto:", file.name.split('.')[0]);
+                    const caption = prompt("Bijschrift voor foto:", file.name.substring(0, file.name.lastIndexOf('.')) || file.name);
                     if (caption === null) return;
                     
                     const img = new Image();
@@ -378,7 +392,7 @@
                         <div class="polaroid ${cls}">
                             <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
                             <img src="${e.target.result}">
-                            <span contenteditable="true">${caption}</span>
+                            <span contenteditable="true" spellcheck="false">${caption}</span>
                         </div>`;
                         gallery.insertAdjacentHTML('beforeend', polaroidHTML);
                         localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
@@ -390,7 +404,6 @@
             event.target.value = '';
         }
 
-        // FUNCTIE OM EEN FOTO TE VERWIJDEREN
         function deletePolaroid(btn) {
             const polaroid = btn.closest('.polaroid');
             const gallery = polaroid.closest('.photo-gallery');
@@ -398,7 +411,6 @@
             if (gallery) {
                 localStorage.setItem(gallery.id, gallery.innerHTML);
             }
-            // Verberg eventuele geopende preview
             zoomPreview.classList.remove('active');
         }
 
@@ -409,7 +421,6 @@
 
         document.addEventListener('mouseover', (e) => {
             const polaroid = e.target.closest('.polaroid');
-            // Zorg dat er niet ingezoomd wordt als op het verwijderknopje wordt gehangen
             if (polaroid && !e.target.classList.contains('delete-photo-btn')) {
                 const img = polaroid.querySelector('img');
                 const span = polaroid.querySelector('span');
@@ -453,7 +464,7 @@
 
             let fileContent = "const externalProjectData = " + JSON.stringify(dataObj, null, 2) + ";";
 
-            const blob = new Blob([fileContent], { type: 'application/javascript;charset=utf-8' });
+            const blob = new Blob([fileContent], { type: 'application/javascript;charset=utf-8' };)
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'data.js';
