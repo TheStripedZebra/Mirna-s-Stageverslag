@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blueprint Stageverslag - Lokale Opslag</title>
+    <title>Blueprint Stageverslag - Compleet</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -11,43 +11,164 @@
             background-color: #0d1b2a; display: flex; justify-content: center; align-items: center;
             font-family: 'Jura', sans-serif;
         }
-        .blueprint-wrapper { position: relative; width: 100vw; height: 100vh; max-width: 100vh; max-height: 100vw; display: flex; justify-content: center; align-items: center; }
-        .blueprint-container { position: relative; width: 100%; height: 100%; max-width: 1422px; max-height: 1000px; aspect-ratio: 1.422 / 1; overflow: hidden; }
-        .blueprint-container img { width: 100%; height: 100%; object-fit: contain; display: block; }
-        .hotspot, .legend-item { position: absolute; width: 1.6%; aspect-ratio: 1 / 1; border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); border: none; background: transparent; }
-        .hotspot:hover, .legend-item:hover { background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.15) 50%, transparent 80%); box-shadow: 0 0 16px 4px rgba(255,255,255,0.6); }
-        
-        .export-bar { position: fixed; top: 12px; right: 12px; z-index: 9999999; display: flex; gap: 8px; }
-        .export-btn { background: #2563eb; color: #fff; border: none; padding: 8px 14px; font-size: 11px; font-family: 'Istok Web', sans-serif; font-weight: 700; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-        .export-btn:hover { background: #1d4ed8; }
 
-        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; z-index: 1000; pointer-events: none; }
+        .blueprint-wrapper {
+            position: relative; width: 100vw; height: 100vh; max-width: 100vh; max-height: 100vw;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        .blueprint-container {
+            position: relative; width: 100%; height: 100%; max-width: 1422px; max-height: 1000px;
+            aspect-ratio: 1.422 / 1; overflow: hidden;
+        }
+
+        .blueprint-container img {
+            width: 100%; height: 100%; object-fit: contain; display: block;
+        }
+
+        .hotspot, .legend-item {
+            position: absolute; width: 1.6%; aspect-ratio: 1 / 1; border-radius: 50%;
+            cursor: pointer; transform: translate(-50%, -50%); border: none; background-color: transparent;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .hotspot:hover, .legend-item:hover {
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.15) 50%, transparent 80%);
+            box-shadow: 0 0 16px 4px rgba(255, 255, 255, 0.6);
+        }
+
+        .export-bar {
+            position: fixed; top: 12px; right: 12px; z-index: 9999999; display: flex; gap: 8px;
+        }
+
+        .export-btn {
+            background: #2563eb; color: #ffffff; border: none; padding: 8px 14px;
+            font-size: 11px; font-family: 'Istok Web', sans-serif; font-weight: 700;
+            border-radius: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: background 0.2s, transform 0.1s;
+        }
+        .export-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: transparent; display: none; z-index: 1000; pointer-events: none;
+        }
         .modal-overlay.active { display: block; pointer-events: auto; }
-        .modal-card { position: absolute; background: #012041; border: 2px solid #CED0DB; box-shadow: 0 20px 40px rgba(0,0,0,0.6); padding: 10px 14px; display: flex; flex-direction: column; min-height: 170px; }
-        .modal-title { color: #fff; font-size: 13px; font-weight: 600; margin: 0; padding-bottom: 4px; border-bottom: 1px solid rgba(206,208,219,0.2); }
-        .modal-body { flex-grow: 1; display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
-        .stage-text, .detail-text { color: #e2e8f0; font-size: 9.5px; margin: 0; outline: none; border: 1px dashed transparent; padding: 2px; }
-        .stage-text:focus, .detail-text:focus { border-color: rgba(100,181,246,0.5); background: rgba(255,255,255,0.03); }
-        
-        .blueprint-hover-trigger { font-size: 8px; color: #64b5f6; cursor: pointer; border-bottom: 1px dashed #64b5f6; width: fit-content; margin: 2px 0; text-transform: uppercase; }
-        .detail-card, .detail-card-right { position: absolute; top: -40px; width: 240px; height: 280px; background: #012041; border: 2px dashed #CED0DB; padding: 12px 16px; border-radius: 12px; z-index: 1005; opacity: 0; visibility: hidden; transition: 0.3s; pointer-events: none; display: flex; flex-direction: column; }
-        .detail-card { left: -260px; } .detail-card-right { right: -260px; }
-        .detail-card.active, .detail-card-right.active { opacity: 1; visibility: visible; pointer-events: auto; }
-        .detail-body { flex-grow: 1; overflow-y: auto; margin-top: 8px; }
 
-        .photo-gallery-header { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
-        .photo-gallery-title { font-size: 8.5px; color: #CED0DB; text-transform: uppercase; }
-        .upload-btn-label { font-size: 7.5px; color: #64b5f6; cursor: pointer; border: 1px dashed #64b5f6; padding: 1px 4px; border-radius: 3px; }
-        .photo-gallery { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; min-height: 48px; align-items: flex-end; }
-        .polaroid { background: #fff; padding: 2px; border-radius: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.3); flex: 0 0 auto; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
-        .polaroid.landscape img { width: 48px; height: 34px; object-fit: cover; }
-        .polaroid.portrait img { width: 30px; height: 42px; object-fit: cover; }
-        .polaroid span { font-size: 5px; color: #333; margin-top: 1px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .modal-card {
+            position: absolute; background: radial-gradient(circle at center, #022D53 0%, #012041 100%);
+            background-color: #012041; border: 2px solid #CED0DB; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            padding: 10px 14px; display: flex; flex-direction: column; box-sizing: border-box;
+            height: auto; min-height: 170px; overflow: visible !important;
+        }
 
-        .modal-close { position: absolute; width: 22px; height: 22px; background: #012041; border: 2px solid #CED0DB; color: #CED0DB; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 12px; font-weight: 700; z-index: 10; padding: 0; }
+        .modal-card::before, .detail-card::before, .detail-card-right::before {
+            content: ""; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border-radius: inherit; background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 24 0 L 0 0 0 24' fill='none' stroke='%23ffffff' stroke-width='0.5' stroke-opacity='0.07'/%3E%3C/svg%3E");
+            pointer-events: none; z-index: 1;
+        }
+
+        .modal-title {
+            position: relative; z-index: 3; color: #ffffff; font-family: 'Jura', sans-serif;
+            font-size: 13px; font-weight: 600; margin: 0; padding: 0 0 4px 0; letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(206, 208, 219, 0.2);
+        }
+
+        .modal-body {
+            position: relative; z-index: 3; flex-grow: 1; display: flex; flex-direction: column;
+            gap: 4px; padding-top: 4px; overflow: visible !important;
+        }
+
+        .stage-text, .detail-text {
+            color: #e2e8f0; font-size: 9.5px; line-height: 1.3; font-family: 'Jura', sans-serif;
+            margin: 0; outline: none; border: 1px dashed transparent; padding: 2px; transition: border 0.2s; border-radius: 2px;
+        }
+        .stage-text:focus, .detail-text:focus {
+            border-color: rgba(100, 181, 246, 0.5); background: rgba(255, 255, 255, 0.03);
+        }
+
+        .blueprint-hover-trigger {
+            display: inline-block; margin-top: 2px; margin-bottom: 2px; font-size: 8px;
+            color: #64b5f6; font-family: 'Istok Web', sans-serif; text-transform: uppercase;
+            letter-spacing: 0.5px; cursor: pointer; border-bottom: 1px dashed #64b5f6; width: fit-content; user-select: none;
+        }
+        .blueprint-hover-trigger:hover { color: #ffffff; border-bottom-style: solid; }
+
+        .detail-card, .detail-card-right {
+            position: absolute; top: -40px; width: 240px; height: 280px;
+            background: radial-gradient(circle at center, #022D53 0%, #012041 100%);
+            background-color: #012041; border: 2px dashed #CED0DB; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            padding: 12px 16px; display: flex; flex-direction: column; box-sizing: border-box;
+            border-radius: 12px; z-index: 1005; opacity: 0; visibility: hidden; transform: scale(0.95);
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease; pointer-events: none;
+        }
+        .detail-card { left: -260px; }
+        .detail-card-right { right: -260px; }
+        .detail-card.active, .detail-card-right.active {
+            opacity: 1; visibility: visible; transform: scale(1); pointer-events: auto;
+        }
+
+        .detail-header {
+            position: relative; z-index: 3; display: flex; justify-content: flex-start;
+            align-items: center; border-bottom: 1px solid rgba(206, 208, 219, 0.3); padding-bottom: 4px;
+        }
+        .detail-tag { font-size: 9px; color: #64b5f6; font-family: 'Istok Web', sans-serif; letter-spacing: 1px; font-weight: bold; }
+        .detail-body { position: relative; z-index: 3; flex-grow: 1; overflow-y: auto; margin-top: 8px; padding-right: 4px; }
+
+        .photo-gallery-header { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; margin-bottom: 2px; }
+        .photo-gallery-title { font-size: 8.5px; font-family: 'Istok Web', sans-serif; color: #CED0DB; text-transform: uppercase; }
+        .upload-btn-label {
+            font-size: 7.5px; font-family: 'Istok Web', sans-serif; color: #64b5f6; cursor: pointer;
+            border: 1px dashed #64b5f6; padding: 1px 4px; border-radius: 3px; transition: all 0.2s;
+        }
+        .upload-btn-label:hover { background: rgba(100, 181, 246, 0.15); color: #ffffff; }
+
+        .photo-gallery {
+            display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden;
+            padding-bottom: 6px; padding-top: 4px; align-items: flex-end; width: 100%; min-height: 48px;
+        }
+        .photo-gallery::-webkit-scrollbar { height: 3px; }
+        .photo-gallery::-webkit-scrollbar-track { background: rgba(1, 32, 65, 0.5); }
+        .photo-gallery::-webkit-scrollbar-thumb { background: #CED0DB; border-radius: 2px; }
+
+        .polaroid {
+            background: #ffffff; padding: 2px; border-radius: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            flex: 0 0 auto; transform: rotate(-2deg); cursor: pointer; position: relative; z-index: 5;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .polaroid:nth-child(even) { transform: rotate(2deg); }
+        .polaroid img { display: block; border: none; object-fit: cover; position: relative; z-index: 6; }
+        .polaroid.landscape img { width: 48px; height: 34px; }
+        .polaroid.portrait img { width: 30px; height: 42px; }
+        .polaroid span {
+            display: block; font-size: 5px; color: #333; text-align: center; font-family: 'Istok Web', sans-serif;
+            margin-top: 1px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+        }
+
+        /* Foto Zoom Hover Preview */
+        #photo-zoom-preview {
+            position: fixed; display: block; opacity: 0; visibility: hidden; background-color: #ffffff !important;
+            padding: 3px; border-radius: 4px; box-shadow: 0 30px 70px rgba(0,0,0,0.95); z-index: 2147483647 !important;
+            pointer-events: none; transform: scale(1); transform-origin: center center;
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease, visibility 0.2s ease;
+        }
+        #photo-zoom-preview.active { opacity: 1; visibility: visible; transform: scale(4); }
+        #photo-zoom-preview img { display: block; border: none !important; object-fit: cover; background-color: #ffffff !important; margin: 0 !important; }
+        #photo-zoom-preview.landscape img { width: 48px; height: 34px; }
+        #photo-zoom-preview.portrait img { width: 30px; height: 42px; }
+        #photo-zoom-preview span {
+            display: block; font-size: 5px; color: #333; text-align: center; font-family: 'Istok Web', sans-serif;
+            margin-top: 1px; background-color: #ffffff !important; width: 100%;
+        }
+
+        .modal-close {
+            position: absolute; width: 22px; height: 22px; background: #012041; border: 2px solid #CED0DB;
+            color: #CED0DB; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; font-size: 12px; font-weight: 700; z-index: 10; padding: 0;
+        }
         .close-tr { top: -9px; right: -9px; } .close-tl { top: -9px; left: -9px; }
 
-        /* Coördinaten posities */
+        /* Modal posities */
         #modal-6 .modal-card, #modal-7 .modal-card, #modal-8 .modal-card, #modal-9 .modal-card, #modal-13 .modal-card, #modal-15 .modal-card, #modal-16 .modal-card, #modal-18 .modal-card, #modal-19 .modal-card, #modal-25 .modal-card { width: 210px; }
         #modal-1 .modal-card, #modal-2 .modal-card, #modal-3 .modal-card, #modal-4 .modal-card, #modal-5 .modal-card, #modal-10 .modal-card, #modal-11 .modal-card, #modal-12 .modal-card, #modal-14 .modal-card, #modal-17 .modal-card, #modal-20 .modal-card, #modal-21 .modal-card, #modal-22 .modal-card, #modal-23 .modal-card, #modal-24 .modal-card, #modal-26 .modal-card { width: 240px; }
         #modal-1 .modal-card  { top: 29.4%; right: 50.0%; border-radius: 16px 0px 16px 16px; }
@@ -112,11 +233,16 @@
         <button class="export-btn" onclick="exportStorageData()">📋 Kopieer Locale Data voor AI</button>
     </div>
 
+    <!-- Foto Zoom Preview Element -->
+    <div id="photo-zoom-preview">
+        <img src="" alt="Zoom">
+        <span></span>
+    </div>
+
     <div class="blueprint-wrapper">
         <div class="blueprint-container">
             <img src="BLUEPRINT BASE.png" alt="Blueprint Base">
             
-            <!-- Hotspots & Legends genereren -->
             <script>
                 const modalTitles = [
                     "King Cobra", "Zendercontainer", "Kleedkamer", "House of Horror", "Cycloon",
@@ -151,6 +277,7 @@
                                 <div class="photo-gallery" id="gallery-${id}"></div>
                             </div>
                             <div class="detail-card${isRight}">
+                                <div class="detail-header"><span class="detail-tag">Uitgebreid verslag</span></div>
                                 <div class="detail-body">
                                     <p class="detail-text" contenteditable="true" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
                                 </div>
@@ -164,7 +291,7 @@
     </div>
 
     <script>
-        // --- LADEN UIT LOCALSTORAGE ---
+        // --- 1. LADEN UIT LOCALSTORAGE ---
         window.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('[data-field]').forEach(el => {
                 const key = el.getAttribute('data-field');
@@ -180,13 +307,14 @@
             }
         });
 
-        // --- OPSLAAN BIJ TYPEN ---
+        // --- 2. OPSLAAN BIJ TYPEN ---
         document.addEventListener('input', (e) => {
             if (e.target.hasAttribute('data-field')) {
                 localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
             }
         });
 
+        // --- 3. LEES MEER / MINDER TOGGLE ---
         function toggleDetailClick(trig) {
             const card = trig.closest('.modal-card').querySelector('.detail-card, .detail-card-right');
             if (card) {
@@ -195,6 +323,7 @@
             }
         }
 
+        // --- 4. FOTO UPLOAD & OPSLAG ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
             const gallery = document.getElementById(`gallery-${modalId}`);
@@ -218,7 +347,43 @@
             event.target.value = '';
         }
 
-        // --- SPECIFIEKE KNOP: KOPIEER ALLES UIT LOCALSTORAGE VOOR DE AI ---
+        // --- 5. HOVER / ZOOM PREVIEW VOOR FOTO'S (HERSTELD!) ---
+        const zoomPreview = document.getElementById('photo-zoom-preview');
+        const zoomImg = zoomPreview.querySelector('img');
+        const zoomSpan = zoomPreview.querySelector('span');
+
+        document.addEventListener('mouseover', (e) => {
+            const polaroid = e.target.closest('.polaroid');
+            if (polaroid) {
+                const img = polaroid.querySelector('img');
+                const span = polaroid.querySelector('span');
+                if (img) {
+                    zoomImg.src = img.src;
+                    zoomSpan.textContent = span ? span.textContent : '';
+                    
+                    if (polaroid.classList.contains('portrait')) {
+                        zoomPreview.classList.remove('landscape');
+                        zoomPreview.classList.add('portrait');
+                    } else {
+                        zoomPreview.classList.remove('portrait');
+                        zoomPreview.classList.add('landscape');
+                    }
+
+                    const rect = polaroid.getBoundingClientRect();
+                    zoomPreview.style.left = `${Math.round(rect.left + rect.width / 2)}px`;
+                    zoomPreview.style.top = `${Math.round(rect.top + rect.height / 2)}px`;
+                    zoomPreview.classList.add('active');
+                }
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.closest('.polaroid')) {
+                zoomPreview.classList.remove('active');
+            }
+        });
+
+        // --- 6. EXPORT / KOPIEER KNOP VOOR AI ---
         function exportStorageData() {
             let backup = {};
             for (let i = 0; i < localStorage.length; i++) {
@@ -228,13 +393,13 @@
             let jsonString = JSON.stringify(backup, null, 2);
             
             navigator.clipboard.writeText(jsonString).then(() => {
-                alert("Gelukt! Alle data uit je lokale geheugen is gekopieerd naar je klembord. Plak dit hieronder in de chat naar mij, dan maak ik de definitieve pagina voor je!");
+                alert("Gelukt! Alle data uit je lokale geheugen is gekopieerd naar je klembord. Plak dit in onze chat!");
             }).catch(err => {
                 prompt("Kopieer deze tekst handmatig:", jsonString);
             });
         }
 
-        // Navigatie en sluiten van modals
+        // --- 7. NAVIGATIE & MODALS OPENEN/SLUITEN ---
         document.addEventListener('click', (e) => {
             const trig = e.target.closest('.hotspot, .legend-item');
             if (trig) {
@@ -242,9 +407,23 @@
                 if (cls) document.getElementById(`modal-${cls.split('-')[1]}`).classList.add('active');
             }
         });
+
         document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.querySelector('.modal-close').addEventListener('click', () => modal.classList.remove('active'));
-            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+            const closeBtn = modal.querySelector('.modal-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                    modal.querySelectorAll('.detail-card, .detail-card-right').forEach(card => card.classList.remove('active'));
+                    modal.querySelectorAll('.blueprint-hover-trigger').forEach(trig => trig.textContent = 'Lees meer...');
+                });
+            }
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                    modal.querySelectorAll('.detail-card, .detail-card-right').forEach(card => card.classList.remove('active'));
+                    modal.querySelectorAll('.blueprint-hover-trigger').forEach(trig => trig.textContent = 'Lees meer...');
+                }
+            });
         });
     </script>
 </body>
