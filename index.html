@@ -590,7 +590,7 @@
                             <button class="modal-close ${closeClass}"><span>X</span></button>
                             <div class="modal-title">${id}. ${title}</div>
                             <div class="modal-body">
-                                <p class="stage-text" contenteditable="true" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
+                                <p class="stage-text" contenteditable="true">Korte samenvatting van onderdeel ${id}.</p>
                                 <span class="blueprint-hover-trigger" onclick="toggleDetailClick(this)">Lees meer...</span>
                                 
                                 <div class="photo-gallery-header">
@@ -607,7 +607,7 @@
                                     <span class="detail-tag">...</span>
                                 </div>
                                 <div class="detail-body">
-                                    <p class="detail-text" contenteditable="true" data-field="detail-${id}">Hier kun je direct het uitgebreide verslag typen en bewerken voor ${title}...</p>
+                                    <p class="detail-text" contenteditable="true">Hier kun je direct het uitgebreide verslag typen en bewerken voor ${title}...</p>
                                 </div>
                             </div>
                         </div>
@@ -619,34 +619,6 @@
     </div>
 
     <script>
-        // --- LADEN EN SYNCHRONISEREN ---
-        window.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('[data-field]').forEach(el => {
-                const key = el.getAttribute('data-field');
-                const savedText = localStorage.getItem(key);
-                // Alleen overschrijven als er daadwerkelijk een bewaarde versie is
-                if (savedText !== null && savedText.trim() !== '') {
-                    el.innerHTML = savedText;
-                }
-            });
-
-            for (let i = 1; i <= 26; i++) {
-                const savedGallery = localStorage.getItem('gallery-' + i);
-                if (savedGallery && savedGallery.trim() !== '') {
-                    const gallery = document.getElementById('gallery-' + i);
-                    if (gallery) gallery.innerHTML = savedGallery;
-                }
-            }
-        });
-
-        // --- DIRECT OPSLAAN BIJ ELKE AANPASSING ---
-        document.addEventListener('input', (e) => {
-            if (e.target.hasAttribute('data-field')) {
-                const key = e.target.getAttribute('data-field');
-                localStorage.setItem(key, e.target.innerHTML);
-            }
-        });
-
         function toggleDetailClick(triggerElement) {
             const modalCard = triggerElement.closest('.modal-card');
             const overlay = modalCard.closest('.modal-overlay');
@@ -683,8 +655,6 @@
                         </div>`;
                         
                         gallery.insertAdjacentHTML('beforeend', polaroidHTML);
-                        // Direct opslaan in localStorage
-                        localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
                     };
                     tempImg.src = imgSrc;
                 };
@@ -693,25 +663,13 @@
             event.target.value = '';
         }
 
-        // --- PERMANENTE FIX VOOR DE EXPORT ---
+        // --- DIRECTE EXPORT ZONDER OPSLAG-LIMIET (GEBRUIKT GEEN LOCALSTORAGE) ---
         function exportHTML() {
-            // 1. Zorg dat de DOM de bewerkte waarden ECHT in HTML-structuur wegschrijft
-            document.querySelectorAll('[data-field]').forEach(el => {
-                const key = el.getAttribute('data-field');
-                const content = el.innerHTML;
-                el.innerHTML = content;
-                // Werk localStorage ook meteen bij voor de zekerheid
-                localStorage.setItem(key, content);
+            // Sla alle huidige ingevoerde tekstinhoud direct vast in de HTML-elementen
+            document.querySelectorAll('.stage-text, .detail-text').forEach(el => {
+                el.innerHTML = el.innerHTML;
             });
 
-            for (let i = 1; i <= 26; i++) {
-                const gallery = document.getElementById('gallery-' + i);
-                if (gallery) {
-                    localStorage.setItem('gallery-' + i, gallery.innerHTML);
-                }
-            }
-
-            // 2. Maak een complete en schone momentopname van het document
             const exportBar = document.querySelector('.export-bar');
             if (exportBar) exportBar.style.display = 'none';
 
