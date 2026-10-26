@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blueprint Stageverslag - Editor</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
-    <!-- HEIC naar JPG Converter bibliotheek -->
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <style>
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
@@ -125,15 +123,9 @@
         }
         .upload-btn-label:hover { background: rgba(100, 181, 246, 0.15); color: #ffffff; }
 
-        /* Drag and Drop styling voor de fotogalerij container */
         .photo-gallery {
             display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden;
             padding-bottom: 6px; padding-top: 4px; align-items: flex-end; width: 100%; min-height: 48px;
-            border: 2px dashed rgba(100, 181, 246, 0.3); border-radius: 4px; transition: background 0.2s, border-color 0.2s;
-        }
-        .photo-gallery.dragover {
-            background: rgba(100, 181, 246, 0.15);
-            border-color: #64b5f6;
         }
         .photo-gallery::-webkit-scrollbar { height: 3px; }
         .photo-gallery::-webkit-scrollbar-track { background: rgba(1, 32, 65, 0.5); }
@@ -149,6 +141,7 @@
         .polaroid.landscape img { width: 48px; height: 34px; }
         .polaroid.portrait img { width: 30px; height: 42px; }
         
+        /* Bewerkbaar onderschrift onder polaroid */
         .polaroid span {
             display: block; font-size: 5px; color: #333; text-align: center; font-family: 'Istok Web', sans-serif;
             margin-top: 1px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
@@ -158,6 +151,7 @@
             border-color: #2563eb; background: rgba(0,0,0,0.05); overflow: visible;
         }
 
+        /* Verwijder-knop voor foto's */
         .delete-photo-btn {
             position: absolute; top: -4px; right: -4px; width: 12px; height: 12px;
             background: #ef4444; color: #ffffff; border-radius: 50%; font-size: 8px;
@@ -287,21 +281,18 @@
                             <button class="modal-close ${closeClass}"><span>X</span></button>
                             <div class="modal-title">${id}. ${title}</div>
                             <div class="modal-body">
-                                <p class="stage-text" contenteditable="true" spellcheck="false" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
+                                <p class="stage-text" contenteditable="true" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
                                 <span class="blueprint-hover-trigger" onclick="toggleDetailClick(this)">Lees meer...</span>
                                 <div class="photo-gallery-header">
-                                    <span class="photo-gallery-title">Foto's (Sleep ze hierheen)</span>
-                                    <label class="upload-btn-label">+ Foto <input type="file" multiple accept="image/*,.heic,.HEIC" style="display:none;" onchange="handlePhotoUpload(event, ${id})"></label>
+                                    <span class="photo-gallery-title">Foto's</span>
+                                    <label class="upload-btn-label">+ Foto <input type="file" multiple accept="image/*" style="display:none;" onchange="handlePhotoUpload(event, ${id})"></label>
                                 </div>
-                                <div class="photo-gallery" id="gallery-${id}" 
-                                     ondragover="handleDragOver(event)" 
-                                     ondragleave="handleDragLeave(event)" 
-                                     ondrop="handleDrop(event, ${id})"></div>
+                                <div class="photo-gallery" id="gallery-${id}"></div>
                             </div>
                             <div class="detail-card${isRight}">
                                 <div class="detail-header"><span class="detail-tag">Uitgebreid verslag</span></div>
                                 <div class="detail-body">
-                                    <p class="detail-text" contenteditable="true" spellcheck="false" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
+                                    <p class="detail-text" contenteditable="true" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
                                 </div>
                             </div>
                         </div>
@@ -330,23 +321,7 @@
                 const gal = localStorage.getItem('gallery-' + i);
                 if (gal && gal.trim() !== '') {
                     const el = document.getElementById('gallery-' + i);
-                    if (el) {
-                        el.innerHTML = gal;
-                        el.querySelectorAll('.polaroid').forEach(polaroid => {
-                            if (!polaroid.querySelector('.delete-photo-btn')) {
-                                const delBtn = document.createElement('button');
-                                delBtn.className = 'delete-photo-btn';
-                                delBtn.innerHTML = '×';
-                                delBtn.onclick = function() { deletePolaroid(this); };
-                                polaroid.prepend(delBtn);
-                            }
-                            const span = polaroid.querySelector('span');
-                            if (span) {
-                                span.setAttribute('contenteditable', 'true');
-                                span.setAttribute('spellcheck', 'false');
-                            }
-                        });
-                    }
+                    if (el) el.innerHTML = gal;
                 }
             }
         });
@@ -356,6 +331,7 @@
             if (e.target.hasAttribute('data-field')) {
                 localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
             }
+            // Als er in een fotobijschrift getypt wordt: sla de hele galerij direct op
             if (e.target.tagName === 'SPAN' && e.target.closest('.polaroid')) {
                 const gallery = e.target.closest('.photo-gallery');
                 if (gallery) {
@@ -384,81 +360,37 @@
             }
         }
 
-        // --- 3. FOTO UPLOAD & DRAG AND DROP ---
+        // --- 3. FOTO UPLOAD (MET EDITABLE CAPTION EN VERWIJDERKNOP) ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
-            processFiles(files, modalId);
-            event.target.value = '';
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.add('dragover');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('dragover');
-        }
-
-        function handleDrop(e, modalId) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files && files.length > 0) {
-                processFiles(files, modalId);
-            }
-        }
-
-        function processFiles(files, modalId) {
             const gallery = document.getElementById(`gallery-${modalId}`);
 
             Array.from(files).forEach(file => {
-                const isHeic = file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic';
-                
-                const processFile = (fileToRead, originalName) => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const caption = prompt("Bijschrift voor foto:", originalName.substring(0, originalName.lastIndexOf('.')) || originalName);
-                        if (caption === null) return;
-                        
-                        const img = new Image();
-                        img.onload = function() {
-                            const cls = img.height > img.width ? 'portrait' : 'landscape';
-                            const polaroidHTML = `
-                            <div class="polaroid ${cls}">
-                                <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
-                                <img src="${e.target.result}">
-                                <span contenteditable="true" spellcheck="false">${caption}</span>
-                            </div>`;
-                            gallery.insertAdjacentHTML('beforeend', polaroidHTML);
-                            localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
-                        };
-                        img.src = e.target.result;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const caption = prompt("Bijschrift voor foto:", file.name.split('.')[0]);
+                    if (caption === null) return;
+                    
+                    const img = new Image();
+                    img.onload = function() {
+                        const cls = img.height > img.width ? 'portrait' : 'landscape';
+                        const polaroidHTML = `
+                        <div class="polaroid ${cls}">
+                            <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
+                            <img src="${e.target.result}">
+                            <span contenteditable="true">${caption}</span>
+                        </div>`;
+                        gallery.insertAdjacentHTML('beforeend', polaroidHTML);
+                        localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
                     };
-                    reader.readAsDataURL(fileToRead);
+                    img.src = e.target.result;
                 };
-
-                if (isHeic) {
-                    heic2any({
-                        blob: file,
-                        toType: "image/jpeg",
-                        quality: 0.8
-                    }).then(function(convertedBlob) {
-                        processFile(convertedBlob, file.name);
-                    }).catch(function(err) {
-                        alert("Kon het HEIC-bestand niet converteren.");
-                    });
-                } else {
-                    processFile(file, file.name);
-                }
+                reader.readAsDataURL(file);
             });
+            event.target.value = '';
         }
 
+        // FUNCTIE OM EEN FOTO TE VERWIJDEREN
         function deletePolaroid(btn) {
             const polaroid = btn.closest('.polaroid');
             const gallery = polaroid.closest('.photo-gallery');
@@ -466,6 +398,7 @@
             if (gallery) {
                 localStorage.setItem(gallery.id, gallery.innerHTML);
             }
+            // Verberg eventuele geopende preview
             zoomPreview.classList.remove('active');
         }
 
@@ -476,6 +409,7 @@
 
         document.addEventListener('mouseover', (e) => {
             const polaroid = e.target.closest('.polaroid');
+            // Zorg dat er niet ingezoomd wordt als op het verwijderknopje wordt gehangen
             if (polaroid && !e.target.classList.contains('delete-photo-btn')) {
                 const img = polaroid.querySelector('img');
                 const span = polaroid.querySelector('span');
