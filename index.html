@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blueprint Stageverslag - Gedeeld</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
-    <!-- HEIC naar JPG Converter bibliotheek -->
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <style>
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
@@ -336,7 +334,10 @@
                 if (gal && gal.trim() !== '') {
                     const el = document.getElementById('gallery-' + i);
                     if (el) {
-                        el.innerHTML = gal;
+                        // Zorg dat we oude blob-links automatisch opschonen uit opgeslagen data
+                        let cleanGal = gal.replace(/src="blob:[^"]+"/g, 'src=""');
+                        el.innerHTML = cleanGal;
+
                         el.querySelectorAll('.polaroid').forEach(polaroid => {
                             if (!polaroid.querySelector('.delete-photo-btn')) {
                                 const delBtn = document.createElement('button');
@@ -389,7 +390,7 @@
             }
         }
 
-        // --- FOTO UPLOAD (MET HEIC ONDERSTEUNING EN GITHUB PAD) ---
+        // --- FOTO UPLOAD (DIRECT NAAR GITHUB PAD, GEEN BLOBS MEER) ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
             processFiles(files, modalId);
@@ -424,51 +425,37 @@
 
             Array.from(files).forEach(file => {
                 const isHeic = file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic';
-                
-                const processFile = (fileToRead, originalName) => {
-                    const baseName = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
-                    // Aangezien HEIC wordt omgezet naar JPG, passen we de extensie in het pad automatisch aan naar .jpg
-                    const targetFilename = isHeic ? baseName + '.jpg' : originalName;
+                const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                const targetFilename = isHeic ? baseName + '.jpg' : file.name;
 
-                    const defaultPath = "images/" + targetFilename;
-                    const githubPath = prompt("Pad naar de foto op GitHub:", defaultPath);
-                    if (githubPath === null) return;
+                const defaultPath = "images/" + targetFilename;
+                const githubPath = prompt("Pad naar de foto op GitHub:", defaultPath);
+                if (githubPath === null) return;
 
-                    const caption = prompt("Bijschrift voor foto:", baseName);
-                    if (caption === null) return;
-                    
-                    const localPreviewUrl = URL.createObjectURL(fileToRead);
+                const caption = prompt("Bijschrift voor foto:", baseName);
+                if (caption === null) return;
 
+                // Bepaal landscape of portrait op basis van de foto die je kiest
+                const reader = new FileReader();
+                reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
                         const cls = img.height > img.width ? 'portrait' : 'landscape';
                         
+                        // Sla direct het GitHub pad op in de HTML (zodat iedereen het ziet!)
                         const polaroidHTML = `
                         <div class="polaroid ${cls}">
                             <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
-                            <img src="${githubPath}" data-preview="${localPreviewUrl}">
+                            <img src="${githubPath}">
                             <span contenteditable="true" spellcheck="false">${caption}</span>
                         </div>`;
                         
                         gallery.insertAdjacentHTML('beforeend', polaroidHTML);
                         localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
                     };
-                    img.src = localPreviewUrl;
+                    img.src = e.target.result;
                 };
-
-                if (isHeic) {
-                    heic2any({
-                        blob: file,
-                        toType: "image/jpeg",
-                        quality: 0.8
-                    }).then(function(convertedBlob) {
-                        processFile(convertedBlob, file.name);
-                    }).catch(function(err) {
-                        alert("Kon het HEIC-bestand niet converteren.");
-                    });
-                } else {
-                    processFile(file, file.name);
-                }
+                reader.readAsDataURL(file);
             });
         }
 
@@ -492,7 +479,7 @@
                 const img = polaroid.querySelector('img');
                 const span = polaroid.querySelector('span');
                 if (img) {
-                    zoomImg.src = img.getAttribute('data-preview') || img.src;
+                    zoomImg.src = img.src; // Gebruikt nu direct het GitHub pad
                     zoomSpan.textContent = span ? span.textContent : '';
                     
                     if (polaroid.classList.contains('portrait')) {
