@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blueprint Stageverslag - Gedeeld</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
-    <!-- HEIC naar JPG Converter bibliotheek -->
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <style>
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
@@ -189,7 +187,8 @@
 
         #modal-6 .modal-card, #modal-7 .modal-card, #modal-8 .modal-card, #modal-9 .modal-card, #modal-13 .modal-card, #modal-15 .modal-card, #modal-16 .modal-card, #modal-18 .modal-card, #modal-19 .modal-card, #modal-25 .modal-card { width: 210px; }
         #modal-1 .modal-card, #modal-2 .modal-card, #modal-4 .modal-card, #modal-5 .modal-card, #modal-10 .modal-card, #modal-11 .modal-card, #modal-12 .modal-card, #modal-14 .modal-card, #modal-17 .modal-card, #modal-20 .modal-card, #modal-21 .modal-card, #modal-22 .modal-card, #modal-23 .modal-card, #modal-24 .modal-card, #modal-26 .modal-card { width: 240px; }
-        #modal-3 .modal-card  { width: 180px !important; }
+        #modal-3 .modal-card { width: 180px !important; }
+
         #modal-1 .modal-card  { top: 29.4%; right: 50.0%; border-radius: 16px 0px 16px 16px; }
         #modal-2 .modal-card  { top: 29.8%; right: 43.9%; border-radius: 16px 0px 16px 16px; }
         #modal-3 .modal-card  { top: 25.9%; right: 33.2%; border-radius: 16px 0px 16px 16px; }
@@ -245,7 +244,7 @@
         .leg-23 { top: 70.8%; left: 2.4%; } .leg-24 { top: 73.1%; left: 2.4%; }
         .leg-25 { top: 75.4%; left: 2.4%; } .leg-26 { top: 77.8%; left: 2.4%; }
     </style>
-    <!-- Dit script laadt automatisch de externe data in als het bestand bestaat op GitHub! -->
+    <!-- Laadt automatisch externe data.js -->
     <script src="data.js" onerror="console.log('Geen extern data.js gevonden, gebruikt lokale browser-opslag.')"></script>
 </head>
 <body>
@@ -314,16 +313,14 @@
     </div>
 
     <script>
-        // --- 1. LADEN VAN DATA (EERST EXTERNE DATA.JS, DAN LOCALSTORAGE) ---
+        // --- 1. LADEN VAN DATA ---
         window.addEventListener('DOMContentLoaded', () => {
-            // Als er externe data is geladen via data.js, stop dit in localStorage zodat alles werkt
             if (typeof externalProjectData !== 'undefined') {
                 for (let key in externalProjectData) {
                     localStorage.setItem(key, externalProjectData[key]);
                 }
             }
 
-            // Vul de velden op het scherm met wat er in localStorage staat
             document.querySelectorAll('[data-field]').forEach(el => {
                 const key = el.getAttribute('data-field');
                 const val = localStorage.getItem(key);
@@ -338,7 +335,6 @@
                     const el = document.getElementById('gallery-' + i);
                     if (el) {
                         el.innerHTML = gal;
-                        // Zorg dat geladen polaroids altijd werkende delete-knoppen en bewerkbare onderschriften hebben
                         el.querySelectorAll('.polaroid').forEach(polaroid => {
                             if (!polaroid.querySelector('.delete-photo-btn')) {
                                 const delBtn = document.createElement('button');
@@ -391,7 +387,7 @@
             }
         }
 
-        // --- FOTO UPLOAD, DRAG & DROP EN HEIC ONDERSTEUNING ---
+        // --- FOTO UPLOAD (GELINKT AAN GITHUB PAD) ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
             processFiles(files, modalId);
@@ -425,44 +421,36 @@
             const gallery = document.getElementById(`gallery-${modalId}`);
 
             Array.from(files).forEach(file => {
-                const isHeic = file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic';
-                
-                const processFile = (fileToRead, originalName) => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const caption = prompt("Bijschrift voor foto:", originalName.substring(0, originalName.lastIndexOf('.')) || originalName);
-                        if (caption === null) return;
-                        
-                        const img = new Image();
-                        img.onload = function() {
-                            const cls = img.height > img.width ? 'portrait' : 'landscape';
-                            const polaroidHTML = `
-                            <div class="polaroid ${cls}">
-                                <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
-                                <img src="${e.target.result}">
-                                <span contenteditable="true" spellcheck="false">${caption}</span>
-                            </div>`;
-                            gallery.insertAdjacentHTML('beforeend', polaroidHTML);
-                            localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(fileToRead);
-                };
+                // Vraag om het pad op GitHub (standaard map 'images/' met de bestandsnaam)
+                const defaultPath = "images/" + file.name;
+                const githubPath = prompt("Pad naar de foto op GitHub:", defaultPath);
+                if (githubPath === null) return;
 
-                if (isHeic) {
-                    heic2any({
-                        blob: file,
-                        toType: "image/jpeg",
-                        quality: 0.8
-                    }).then(function(convertedBlob) {
-                        processFile(convertedBlob, file.name);
-                    }).catch(function(err) {
-                        alert("Kon het HEIC-bestand niet converteren.");
-                    });
-                } else {
-                    processFile(file, file.name);
-                }
+                const defaultCaption = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                const caption = prompt("Bijschrift voor foto:", defaultCaption);
+                if (caption === null) return;
+                
+                // Gebruik een tijdelijke object URL voor directe preview op het scherm
+                const localPreviewUrl = URL.createObjectURL(file);
+
+                const img = new Image();
+                img.onload = function() {
+                    const cls = img.height > img.width ? 'portrait' : 'landscape';
+                    
+                    // Belangrijk: in de HTML slaan we het GitHub pad op (githubPath), niet de zware foto-data!
+                    const polaroidHTML = `
+                    <div class="polaroid ${cls}">
+                        <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
+                        <img src="${githubPath}" data-preview="${localPreviewUrl}">
+                        <span contenteditable="true" spellcheck="false">${caption}</span>
+                    </div>`;
+                    
+                    gallery.insertAdjacentHTML('beforeend', polaroidHTML);
+                    
+                    // Sla op in localStorage (nu alleen met het lichte pad!)
+                    localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
+                };
+                img.src = localPreviewUrl;
             });
         }
 
@@ -486,7 +474,8 @@
                 const img = polaroid.querySelector('img');
                 const span = polaroid.querySelector('span');
                 if (img) {
-                    zoomImg.src = img.src;
+                    // Gebruik voor de zoom de preview als die er is, anders de src
+                    zoomImg.src = img.getAttribute('data-preview') || img.src;
                     zoomSpan.textContent = span ? span.textContent : '';
                     
                     if (polaroid.classList.contains('portrait')) {
@@ -511,24 +500,20 @@
             }
         });
 
-        // --- 3. MAAKT HET LOSSE 'data.js' BESTAND BIJ CTRL+S ---
+        // --- 3. EXPORTEREN NAAR DATA.JS ---
         function generateDataFile() {
-            // Zorg dat actuele tekstvelden in localStorage worden gezet
             document.querySelectorAll('[data-field]').forEach(el => {
                 localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
             });
 
-            // Verzamel alles uit localStorage in een object
             let dataObj = {};
             for (let i = 0; i < localStorage.length; i++) {
                 let key = localStorage.key(i);
                 dataObj[key] = localStorage.getItem(key);
             }
 
-            // Maak de inhoud van het JavaScript-bestand
             let fileContent = "const externalProjectData = " + JSON.stringify(dataObj, null, 2) + ";";
 
-            // Download als 'data.js'
             const blob = new Blob([fileContent], { type: 'application/javascript;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
