@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blueprint Stageverslag - Editor</title>
+    <title>Blueprint Stageverslag - Gedeeld</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -140,25 +140,10 @@
         .polaroid img { display: block; border: none; object-fit: cover; position: relative; z-index: 6; }
         .polaroid.landscape img { width: 48px; height: 34px; }
         .polaroid.portrait img { width: 30px; height: 42px; }
-        
-        /* Bewerkbaar onderschrift onder polaroid */
         .polaroid span {
             display: block; font-size: 5px; color: #333; text-align: center; font-family: 'Istok Web', sans-serif;
             margin-top: 1px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
-            outline: none; border: 1px dashed transparent; min-width: 20px;
         }
-        .polaroid span:focus {
-            border-color: #2563eb; background: rgba(0,0,0,0.05); overflow: visible;
-        }
-
-        /* Verwijder-knop voor foto's */
-        .delete-photo-btn {
-            position: absolute; top: -4px; right: -4px; width: 12px; height: 12px;
-            background: #ef4444; color: #ffffff; border-radius: 50%; font-size: 8px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            z-index: 10; opacity: 0; transition: opacity 0.2s; font-weight: bold; border: none; padding: 0;
-        }
-        .polaroid:hover .delete-photo-btn { opacity: 1; }
 
         #photo-zoom-preview {
             position: fixed; display: block; opacity: 0; visibility: hidden; background-color: #ffffff !important;
@@ -239,7 +224,8 @@
         .leg-23 { top: 70.8%; left: 2.4%; } .leg-24 { top: 73.1%; left: 2.4%; }
         .leg-25 { top: 75.4%; left: 2.4%; } .leg-26 { top: 77.8%; left: 2.4%; }
     </style>
-    <script src="data.js" onerror="console.log('Geen extern data.js gevonden.')"></script>
+    <!-- Dit script laadt automatisch de externe data in als het bestand bestaat op GitHub! -->
+    <script src="data.js" onerror="console.log('Geen extern data.js gevonden, gebruikt lokale browser-opslag.')"></script>
 </head>
 <body>
 
@@ -304,14 +290,16 @@
     </div>
 
     <script>
-        // --- 1. LADEN EN SYNCHRONISEREN VAN DATA ---
+        // --- 1. LADEN VAN DATA (EERST EXTERNE DATA.JS, DAN LOCALSTORAGE) ---
         window.addEventListener('DOMContentLoaded', () => {
+            // Als er externe data is geladen via data.js, stop dit in localStorage zodat alles werkt
             if (typeof externalProjectData !== 'undefined') {
                 for (let key in externalProjectData) {
                     localStorage.setItem(key, externalProjectData[key]);
                 }
             }
 
+            // Vul de velden op het scherm met wat er in localStorage staat
             document.querySelectorAll('[data-field]').forEach(el => {
                 const key = el.getAttribute('data-field');
                 const val = localStorage.getItem(key);
@@ -326,29 +314,16 @@
             }
         });
 
-        // --- 2. TEKSTEN DIRECT OPSLAAN BIJ TYPEN ---
+        // --- 2. DIRECT OPSLAAN BIJ TYPEN ---
         document.addEventListener('input', (e) => {
             if (e.target.hasAttribute('data-field')) {
                 localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
-            }
-            // Als er in een fotobijschrift getypt wordt: sla de hele galerij direct op
-            if (e.target.tagName === 'SPAN' && e.target.closest('.polaroid')) {
-                const gallery = e.target.closest('.photo-gallery');
-                if (gallery) {
-                    localStorage.setItem(gallery.id, gallery.innerHTML);
-                }
             }
         });
 
         document.addEventListener('blur', (e) => {
             if (e.target.hasAttribute('data-field')) {
                 localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
-            }
-            if (e.target.tagName === 'SPAN' && e.target.closest('.polaroid')) {
-                const gallery = e.target.closest('.photo-gallery');
-                if (gallery) {
-                    localStorage.setItem(gallery.id, gallery.innerHTML);
-                }
             }
         }, true);
 
@@ -360,7 +335,6 @@
             }
         }
 
-        // --- 3. FOTO UPLOAD (MET EDITABLE CAPTION EN VERWIJDERKNOP) ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
             const gallery = document.getElementById(`gallery-${modalId}`);
@@ -374,13 +348,7 @@
                     const img = new Image();
                     img.onload = function() {
                         const cls = img.height > img.width ? 'portrait' : 'landscape';
-                        const polaroidHTML = `
-                        <div class="polaroid ${cls}">
-                            <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
-                            <img src="${e.target.result}">
-                            <span contenteditable="true">${caption}</span>
-                        </div>`;
-                        gallery.insertAdjacentHTML('beforeend', polaroidHTML);
+                        gallery.insertAdjacentHTML('beforeend', `<div class="polaroid ${cls}"><img src="${e.target.result}"><span>${caption}</span></div>`);
                         localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
                     };
                     img.src = e.target.result;
@@ -390,27 +358,13 @@
             event.target.value = '';
         }
 
-        // FUNCTIE OM EEN FOTO TE VERWIJDEREN
-        function deletePolaroid(btn) {
-            const polaroid = btn.closest('.polaroid');
-            const gallery = polaroid.closest('.photo-gallery');
-            polaroid.remove();
-            if (gallery) {
-                localStorage.setItem(gallery.id, gallery.innerHTML);
-            }
-            // Verberg eventuele geopende preview
-            zoomPreview.classList.remove('active');
-        }
-
-        // --- 4. ZOOM HOVER PREVIEW ---
         const zoomPreview = document.getElementById('photo-zoom-preview');
         const zoomImg = zoomPreview.querySelector('img');
         const zoomSpan = zoomPreview.querySelector('span');
 
         document.addEventListener('mouseover', (e) => {
             const polaroid = e.target.closest('.polaroid');
-            // Zorg dat er niet ingezoomd wordt als op het verwijderknopje wordt gehangen
-            if (polaroid && !e.target.classList.contains('delete-photo-btn')) {
+            if (polaroid) {
                 const img = polaroid.querySelector('img');
                 const span = polaroid.querySelector('span');
                 if (img) {
@@ -439,20 +393,24 @@
             }
         });
 
-        // --- 5. BESTAND MAKEN VOOR DATA.JS ---
+        // --- 3. MAAKT HET LOSSE 'data.js' BESTAND BIJ CTRL+S ---
         function generateDataFile() {
+            // Zorg dat actuele tekstvelden in localStorage worden gezet
             document.querySelectorAll('[data-field]').forEach(el => {
                 localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
             });
 
+            // Verzamel alles uit localStorage in een object
             let dataObj = {};
             for (let i = 0; i < localStorage.length; i++) {
                 let key = localStorage.key(i);
                 dataObj[key] = localStorage.getItem(key);
             }
 
+            // Maak de inhoud van het JavaScript-bestand
             let fileContent = "const externalProjectData = " + JSON.stringify(dataObj, null, 2) + ";";
 
+            // Download als 'data.js'
             const blob = new Blob([fileContent], { type: 'application/javascript;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -462,6 +420,7 @@
             document.body.removeChild(a);
         }
 
+        // --- 4. KOPPELING AAN CTRL + S ---
         window.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
                 e.preventDefault(); 
