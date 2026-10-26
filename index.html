@@ -334,7 +334,10 @@
                 if (gal && gal.trim() !== '') {
                     const el = document.getElementById('gallery-' + i);
                     if (el) {
-                        el.innerHTML = gal;
+                        // Zorg dat we oude blob-links automatisch opschonen uit opgeslagen data
+                        let cleanGal = gal.replace(/src="blob:[^"]+"/g, 'src=""');
+                        el.innerHTML = cleanGal;
+
                         el.querySelectorAll('.polaroid').forEach(polaroid => {
                             if (!polaroid.querySelector('.delete-photo-btn')) {
                                 const delBtn = document.createElement('button');
@@ -387,7 +390,7 @@
             }
         }
 
-        // --- FOTO UPLOAD (GELINKT AAN GITHUB PAD) ---
+        // --- FOTO UPLOAD (DIRECT NAAR GITHUB PAD, GEEN BLOBS MEER) ---
         function handlePhotoUpload(event, modalId) {
             const files = event.target.files;
             processFiles(files, modalId);
@@ -421,36 +424,38 @@
             const gallery = document.getElementById(`gallery-${modalId}`);
 
             Array.from(files).forEach(file => {
-                // Vraag om het pad op GitHub (standaard map 'images/' met de bestandsnaam)
-                const defaultPath = "images/" + file.name;
+                const isHeic = file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic';
+                const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                const targetFilename = isHeic ? baseName + '.jpg' : file.name;
+
+                const defaultPath = "images/" + targetFilename;
                 const githubPath = prompt("Pad naar de foto op GitHub:", defaultPath);
                 if (githubPath === null) return;
 
-                const defaultCaption = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-                const caption = prompt("Bijschrift voor foto:", defaultCaption);
+                const caption = prompt("Bijschrift voor foto:", baseName);
                 if (caption === null) return;
-                
-                // Gebruik een tijdelijke object URL voor directe preview op het scherm
-                const localPreviewUrl = URL.createObjectURL(file);
 
-                const img = new Image();
-                img.onload = function() {
-                    const cls = img.height > img.width ? 'portrait' : 'landscape';
-                    
-                    // Belangrijk: in de HTML slaan we het GitHub pad op (githubPath), niet de zware foto-data!
-                    const polaroidHTML = `
-                    <div class="polaroid ${cls}">
-                        <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
-                        <img src="${githubPath}" data-preview="${localPreviewUrl}">
-                        <span contenteditable="true" spellcheck="false">${caption}</span>
-                    </div>`;
-                    
-                    gallery.insertAdjacentHTML('beforeend', polaroidHTML);
-                    
-                    // Sla op in localStorage (nu alleen met het lichte pad!)
-                    localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
+                // Bepaal landscape of portrait op basis van de foto die je kiest
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const cls = img.height > img.width ? 'portrait' : 'landscape';
+                        
+                        // Sla direct het GitHub pad op in de HTML (zodat iedereen het ziet!)
+                        const polaroidHTML = `
+                        <div class="polaroid ${cls}">
+                            <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
+                            <img src="${githubPath}">
+                            <span contenteditable="true" spellcheck="false">${caption}</span>
+                        </div>`;
+                        
+                        gallery.insertAdjacentHTML('beforeend', polaroidHTML);
+                        localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
+                    };
+                    img.src = e.target.result;
                 };
-                img.src = localPreviewUrl;
+                reader.readAsDataURL(file);
             });
         }
 
@@ -474,8 +479,7 @@
                 const img = polaroid.querySelector('img');
                 const span = polaroid.querySelector('span');
                 if (img) {
-                    // Gebruik voor de zoom de preview als die er is, anders de src
-                    zoomImg.src = img.getAttribute('data-preview') || img.src;
+                    zoomImg.src = img.src; // Gebruikt nu direct het GitHub pad
                     zoomSpan.textContent = span ? span.textContent : '';
                     
                     if (polaroid.classList.contains('portrait')) {
