@@ -98,7 +98,26 @@
             align-items: center; border-bottom: 1px solid rgba(206, 208, 219, 0.3); padding-bottom: 4px;
         }
         .detail-tag { font-size: 9px; color: #64b5f6; font-family: 'Istok Web', sans-serif; letter-spacing: 1px; font-weight: bold; }
-        .detail-body { position: relative; z-index: 3; flex-grow: 1; overflow-y: auto; margin-top: 8px; padding-right: 4px; }
+        
+        .detail-body {
+            position: relative; z-index: 3; flex-grow: 1; overflow-y: auto; margin-top: 8px; padding-right: 6px;
+        }
+
+        /* --- SUBTIELE, PASSENDE SCROLLBAR --- */
+        .detail-body::-webkit-scrollbar {
+            width: 5px;
+        }
+        .detail-body::-webkit-scrollbar-track {
+            background: rgba(1, 32, 65, 0.4);
+            border-radius: 3px;
+        }
+        .detail-body::-webkit-scrollbar-thumb {
+            background: #64b5f6;
+            border-radius: 3px;
+        }
+        .detail-body::-webkit-scrollbar-thumb:hover {
+            background: #90caf9;
+        }
 
         .photo-gallery-header { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; margin-bottom: 2px; }
         .photo-gallery-title { font-size: 8.5px; font-family: 'Istok Web', sans-serif; color: #CED0DB; text-transform: uppercase; }
@@ -125,7 +144,6 @@
             margin-top: 1px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
         }
 
-        /* Prullenbakjes definitief verbergen voor de lezer */
         .delete-photo-btn { display: none !important; }
 
         #photo-zoom-preview {
@@ -281,24 +299,39 @@
                     }
                 });
 
-                // Vul alle fotogalerijen in (zonder bewerk-opties)
+                // Vul alle fotogalerijen in en zorg dat onderschriften niet bewerkbaar zijn
                 for (let i = 1; i <= 26; i++) {
                     const galKey = 'gallery-' + i;
                     if (externalProjectData[galKey]) {
                         const el = document.getElementById(galKey);
                         if (el) {
                             el.innerHTML = externalProjectData[galKey];
+                            // Verwijder eventuele contenteditable attributen van de fototeksten
+                            el.querySelectorAll('.polaroid span').forEach(span => {
+                                span.removeAttribute('contenteditable');
+                            });
                         }
                     }
                 }
             }
         });
 
+        // --- KLIK OP 'LEES MEER' (EN RESET SCROLL NAAR BOVEN) ---
         function toggleDetailClick(trig) {
-            const card = trig.closest('.modal-card').querySelector('.detail-card, .detail-card-right');
+            const modalCard = trig.closest('.modal-card');
+            const card = modalCard.querySelector('.detail-card, .detail-card-right');
             if (card) {
                 card.classList.toggle('active');
-                trig.textContent = card.classList.contains('active') ? 'Lees minder...' : 'Lees meer...';
+                const isOpen = card.classList.contains('active');
+                trig.textContent = isOpen ? 'Lees minder...' : 'Lees meer...';
+
+                // Als het uitgebreide verslag opent, zet de scroll direct helemaal bovenaan
+                if (isOpen) {
+                    const detailBody = card.querySelector('.detail-body');
+                    if (detailBody) {
+                        detailBody.scrollTop = 0;
+                    }
+                }
             }
         }
 
