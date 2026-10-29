@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blueprint Stageverslag - Gedeeld</title>
+    <title>Stageverslag Vis à Vis - Mirna 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -37,18 +37,6 @@
             box-shadow: 0 0 16px 4px rgba(255, 255, 255, 0.6);
         }
 
-        .export-bar {
-            position: fixed; top: 12px; right: 12px; z-index: 9999999; display: flex; gap: 8px;
-        }
-
-        .export-btn {
-            background: #2563eb; color: #ffffff; border: none; padding: 8px 14px;
-            font-size: 11px; font-family: 'Istok Web', sans-serif; font-weight: 700;
-            border-radius: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            transition: background 0.2s, transform 0.1s;
-        }
-        .export-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
-
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: transparent; display: none; z-index: 1000; pointer-events: none;
@@ -81,10 +69,7 @@
 
         .stage-text, .detail-text {
             color: #e2e8f0; font-size: 9.5px; line-height: 1.3; font-family: 'Jura', sans-serif;
-            margin: 0; outline: none; border: 1px dashed transparent; padding: 2px; transition: border 0.2s; border-radius: 2px;
-        }
-        .stage-text:focus, .detail-text:focus {
-            border-color: rgba(100, 181, 246, 0.5); background: rgba(255, 255, 255, 0.03);
+            margin: 0; outline: none; border: none; padding: 2px; background: transparent;
         }
 
         .blueprint-hover-trigger {
@@ -117,21 +102,10 @@
 
         .photo-gallery-header { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; margin-bottom: 2px; }
         .photo-gallery-title { font-size: 8.5px; font-family: 'Istok Web', sans-serif; color: #CED0DB; text-transform: uppercase; }
-        .upload-btn-label {
-            font-size: 7.5px; font-family: 'Istok Web', sans-serif; color: #64b5f6; cursor: pointer;
-            border: 1px dashed #64b5f6; padding: 1px 4px; border-radius: 3px; transition: all 0.2s;
-        }
-        .upload-btn-label:hover { background: rgba(100, 181, 246, 0.15); color: #ffffff; }
 
         .photo-gallery {
             display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden;
             padding-bottom: 6px; padding-top: 4px; align-items: flex-end; width: 100%; min-height: 48px;
-            border: 2px dashed transparent; transition: border-color 0.2s, background 0.2s;
-        }
-        .photo-gallery.dragover {
-            background: rgba(100, 181, 246, 0.15);
-            border-color: #64b5f6;
-            border-radius: 4px;
         }
         .photo-gallery::-webkit-scrollbar { height: 3px; }
         .photo-gallery::-webkit-scrollbar-track { background: rgba(1, 32, 65, 0.5); }
@@ -149,19 +123,10 @@
         .polaroid span {
             display: block; font-size: 5px; color: #333; text-align: center; font-family: 'Istok Web', sans-serif;
             margin-top: 1px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
-            outline: none; border: 1px dashed transparent; min-width: 20px;
-        }
-        .polaroid span:focus {
-            border-color: #2563eb; background: rgba(0,0,0,0.05); overflow: visible;
         }
 
-        .delete-photo-btn {
-            position: absolute; top: -4px; right: -4px; width: 12px; height: 12px;
-            background: #ef4444; color: #ffffff; border-radius: 50%; font-size: 8px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            z-index: 10; opacity: 0; transition: opacity 0.2s; font-weight: bold; border: none; padding: 0;
-        }
-        .polaroid:hover .delete-photo-btn { opacity: 1; }
+        /* Prullenbakjes definitief verbergen voor de lezer */
+        .delete-photo-btn { display: none !important; }
 
         #photo-zoom-preview {
             position: fixed; display: block; opacity: 0; visibility: hidden; background-color: #ffffff !important;
@@ -244,14 +209,10 @@
         .leg-23 { top: 70.8%; left: 2.4%; } .leg-24 { top: 73.1%; left: 2.4%; }
         .leg-25 { top: 75.4%; left: 2.4%; } .leg-26 { top: 77.8%; left: 2.4%; }
     </style>
-    <!-- Laadt automatisch externe data.js -->
-    <script src="data.js" onerror="console.log('Geen extern data.js gevonden, gebruikt lokale browser-opslag.')"></script>
+    <!-- Laadt de inhoud uit je data.js bestand -->
+    <script src="data.js" onerror="console.log('Geen data.js gevonden.')"></script>
 </head>
 <body>
-
-    <div class="export-bar">
-        <button class="export-btn" onclick="generateDataFile()">💾 Download data.js (Ctrl+S)</button>
-    </div>
 
     <div id="photo-zoom-preview">
         <img src="" alt="Zoom">
@@ -287,21 +248,17 @@
                             <button class="modal-close ${closeClass}"><span>X</span></button>
                             <div class="modal-title">${id}. ${title}</div>
                             <div class="modal-body">
-                                <p class="stage-text" contenteditable="true" spellcheck="false" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
+                                <p class="stage-text" data-field="stage-${id}">Korte samenvatting van onderdeel ${id}.</p>
                                 <span class="blueprint-hover-trigger" onclick="toggleDetailClick(this)">Lees meer...</span>
                                 <div class="photo-gallery-header">
                                     <span class="photo-gallery-title">Foto's</span>
-                                    <label class="upload-btn-label">+ Foto <input type="file" multiple accept="image/*,.heic,.HEIC" style="display:none;" onchange="handlePhotoUpload(event, ${id})"></label>
                                 </div>
-                                <div class="photo-gallery" id="gallery-${id}" 
-                                     ondragover="handleDragOver(event)" 
-                                     ondragleave="handleDragLeave(event)" 
-                                     ondrop="handleDrop(event, ${id})"></div>
+                                <div class="photo-gallery" id="gallery-${id}"></div>
                             </div>
                             <div class="detail-card${isRight}">
                                 <div class="detail-header"><span class="detail-tag">Uitgebreid verslag</span></div>
                                 <div class="detail-body">
-                                    <p class="detail-text" contenteditable="true" spellcheck="false" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
+                                    <p class="detail-text" data-field="detail-${id}">Uitgebreid verslag voor ${title}...</p>
                                 </div>
                             </div>
                         </div>
@@ -313,74 +270,29 @@
     </div>
 
     <script>
-        // --- 1. LADEN VAN DATA ---
+        // --- INLADEN VAN DATA UIT DATA.JS VOOR DE LEZER ---
         window.addEventListener('DOMContentLoaded', () => {
             if (typeof externalProjectData !== 'undefined') {
-                for (let key in externalProjectData) {
-                    localStorage.setItem(key, externalProjectData[key]);
-                }
-            }
+                // Vul alle teksten in
+                document.querySelectorAll('[data-field]').forEach(el => {
+                    const key = el.getAttribute('data-field');
+                    if (externalProjectData[key] !== undefined) {
+                        el.innerHTML = externalProjectData[key];
+                    }
+                });
 
-            document.querySelectorAll('[data-field]').forEach(el => {
-                const key = el.getAttribute('data-field');
-                const val = localStorage.getItem(key);
-                if (val !== null && val.trim() !== '') {
-                    el.innerHTML = val;
-                }
-                el.setAttribute('spellcheck', 'false');
-            });
-            for (let i = 1; i <= 26; i++) {
-                const gal = localStorage.getItem('gallery-' + i);
-                if (gal && gal.trim() !== '') {
-                    const el = document.getElementById('gallery-' + i);
-                    if (el) {
-                        // Zorg dat we oude blob-links automatisch opschonen uit opgeslagen data
-                        let cleanGal = gal.replace(/src="blob:[^"]+"/g, 'src=""');
-                        el.innerHTML = cleanGal;
-
-                        el.querySelectorAll('.polaroid').forEach(polaroid => {
-                            if (!polaroid.querySelector('.delete-photo-btn')) {
-                                const delBtn = document.createElement('button');
-                                delBtn.className = 'delete-photo-btn';
-                                delBtn.innerHTML = '×';
-                                delBtn.onclick = function() { deletePolaroid(this); };
-                                polaroid.prepend(delBtn);
-                            }
-                            const span = polaroid.querySelector('span');
-                            if (span) {
-                                span.setAttribute('contenteditable', 'true');
-                                span.setAttribute('spellcheck', 'false');
-                            }
-                        });
+                // Vul alle fotogalerijen in (zonder bewerk-opties)
+                for (let i = 1; i <= 26; i++) {
+                    const galKey = 'gallery-' + i;
+                    if (externalProjectData[galKey]) {
+                        const el = document.getElementById(galKey);
+                        if (el) {
+                            el.innerHTML = externalProjectData[galKey];
+                        }
                     }
                 }
             }
         });
-
-        // --- 2. DIRECT OPSLAAN BIJ TYPEN ---
-        document.addEventListener('input', (e) => {
-            if (e.target.hasAttribute('data-field')) {
-                localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
-            }
-            if (e.target.tagName === 'SPAN' && e.target.closest('.polaroid')) {
-                const gallery = e.target.closest('.photo-gallery');
-                if (gallery) {
-                    localStorage.setItem(gallery.id, gallery.innerHTML);
-                }
-            }
-        });
-
-        document.addEventListener('blur', (e) => {
-            if (e.target.hasAttribute('data-field')) {
-                localStorage.setItem(e.target.getAttribute('data-field'), e.target.innerHTML);
-            }
-            if (e.target.tagName === 'SPAN' && e.target.closest('.polaroid')) {
-                const gallery = e.target.closest('.photo-gallery');
-                if (gallery) {
-                    localStorage.setItem(gallery.id, gallery.innerHTML);
-                }
-            }
-        }, true);
 
         function toggleDetailClick(trig) {
             const card = trig.closest('.modal-card').querySelector('.detail-card, .detail-card-right');
@@ -390,96 +302,18 @@
             }
         }
 
-        // --- FOTO UPLOAD (DIRECT NAAR GITHUB PAD, GEEN BLOBS MEER) ---
-        function handlePhotoUpload(event, modalId) {
-            const files = event.target.files;
-            processFiles(files, modalId);
-            event.target.value = '';
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.add('dragover');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('dragover');
-        }
-
-        function handleDrop(e, modalId) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files && files.length > 0) {
-                processFiles(files, modalId);
-            }
-        }
-
-        function processFiles(files, modalId) {
-            const gallery = document.getElementById(`gallery-${modalId}`);
-
-            Array.from(files).forEach(file => {
-                const isHeic = file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic';
-                const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-                const targetFilename = isHeic ? baseName + '.jpg' : file.name;
-
-                const defaultPath = "images/" + targetFilename;
-                const githubPath = prompt("Pad naar de foto op GitHub:", defaultPath);
-                if (githubPath === null) return;
-
-                const caption = prompt("Bijschrift voor foto:", baseName);
-                if (caption === null) return;
-
-                // Bepaal landscape of portrait op basis van de foto die je kiest
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const cls = img.height > img.width ? 'portrait' : 'landscape';
-                        
-                        // Sla direct het GitHub pad op in de HTML (zodat iedereen het ziet!)
-                        const polaroidHTML = `
-                        <div class="polaroid ${cls}">
-                            <button class="delete-photo-btn" onclick="deletePolaroid(this)">×</button>
-                            <img src="${githubPath}">
-                            <span contenteditable="true" spellcheck="false">${caption}</span>
-                        </div>`;
-                        
-                        gallery.insertAdjacentHTML('beforeend', polaroidHTML);
-                        localStorage.setItem('gallery-' + modalId, gallery.innerHTML);
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function deletePolaroid(btn) {
-            const polaroid = btn.closest('.polaroid');
-            const gallery = polaroid.closest('.photo-gallery');
-            polaroid.remove();
-            if (gallery) {
-                localStorage.setItem(gallery.id, gallery.innerHTML);
-            }
-            zoomPreview.classList.remove('active');
-        }
-
+        // --- ZOOM PREVIEW VOOR FOTO'S ---
         const zoomPreview = document.getElementById('photo-zoom-preview');
         const zoomImg = zoomPreview.querySelector('img');
         const zoomSpan = zoomPreview.querySelector('span');
 
         document.addEventListener('mouseover', (e) => {
             const polaroid = e.target.closest('.polaroid');
-            if (polaroid && !e.target.classList.contains('delete-photo-btn')) {
+            if (polaroid) {
                 const img = polaroid.querySelector('img');
                 const span = polaroid.querySelector('span');
                 if (img) {
-                    zoomImg.src = img.src; // Gebruikt nu direct het GitHub pad
+                    zoomImg.src = img.src;
                     zoomSpan.textContent = span ? span.textContent : '';
                     
                     if (polaroid.classList.contains('portrait')) {
@@ -504,37 +338,7 @@
             }
         });
 
-        // --- 3. EXPORTEREN NAAR DATA.JS ---
-        function generateDataFile() {
-            document.querySelectorAll('[data-field]').forEach(el => {
-                localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
-            });
-
-            let dataObj = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                let key = localStorage.key(i);
-                dataObj[key] = localStorage.getItem(key);
-            }
-
-            let fileContent = "const externalProjectData = " + JSON.stringify(dataObj, null, 2) + ";";
-
-            const blob = new Blob([fileContent], { type: 'application/javascript;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'data.js';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        // --- 4. KOPPELING AAN CTRL + S ---
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-                e.preventDefault(); 
-                generateDataFile(); 
-            }
-        });
-
+        // --- OPENEN VAN POP-UPS ---
         document.addEventListener('click', (e) => {
             const trig = e.target.closest('.hotspot, .legend-item');
             if (trig) {
@@ -543,13 +347,11 @@
             }
         });
 
+        // --- SLUITEN VAN POP-UPS ---
         document.querySelectorAll('.modal-overlay').forEach(modal => {
             const closeBtn = modal.querySelector('.modal-close');
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
-                    modal.querySelectorAll('[data-field]').forEach(el => {
-                        localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
-                    });
                     modal.classList.remove('active');
                     modal.querySelectorAll('.detail-card, .detail-card-right').forEach(card => card.classList.remove('active'));
                     modal.querySelectorAll('.blueprint-hover-trigger').forEach(trig => trig.textContent = 'Lees meer...');
@@ -557,9 +359,6 @@
             }
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
-                    modal.querySelectorAll('[data-field]').forEach(el => {
-                        localStorage.setItem(el.getAttribute('data-field'), el.innerHTML);
-                    });
                     modal.classList.remove('active');
                     modal.querySelectorAll('.detail-card, .detail-card-right').forEach(card => card.classList.remove('active'));
                     modal.querySelectorAll('.blueprint-hover-trigger').forEach(trig => trig.textContent = 'Lees meer...');
